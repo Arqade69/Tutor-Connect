@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, dashboardFor } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { StatTile } from "@/components/ui";
-import { UsersTable, type AdminUser } from "@/components/UsersTable";
-import { TutorVerifications, type AdminTutorProfile } from "@/components/TutorVerifications";
+import { adminGetAnalyticsAndMonitoringData } from "@/actions/admin";
+import { AdminAnalyticsDashboard } from "@/components/AdminAnalyticsDashboard";
+import type { AdminUser } from "@/components/UsersTable";
+import type { AdminTutorProfile } from "@/components/TutorVerifications";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,8 @@ export default async function AdminDashboard() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role !== "admin") redirect(dashboardFor(user.role));
+
+  const analyticsData = await adminGetAnalyticsAndMonitoringData();
 
   const dbUsers = await prisma.user.findMany({
     where: { role: { in: ["student", "parent", "tutor"] } },
@@ -64,43 +67,24 @@ export default async function AdminDashboard() {
     district: u.district,
     isPremium: u.isPremium,
     status: u.status,
+    isFlagged: u.isFlagged,
+    flagReason: u.flagReason,
     createdAt: u.createdAt.toISOString(),
     academicInfo: u.academicInfo,
     studentProfiles: u.studentProfiles,
     tutorProfile: u.tutorProfile,
   }));
 
-  const students = users.filter((u) => u.role === "student").length;
-  const parents = users.filter((u) => u.role === "parent").length;
-  const tutorRoleCount = users.filter((u) => u.role === "tutor").length;
-  const pendingVerifications = tutors.filter((t) => t.verificationStatus === "pending").length;
-
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Admin · Management Dashboard</h1>
-          <p className="mt-1 text-slate-500">
-            Review tutor registrations, verify credentials, and manage all platform accounts.
-          </p>
-        </div>
-      </header>
-
-      <section id="stats" className="grid scroll-mt-24 grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <StatTile label="Total users" value={users.length} accent="brand" />
-        <StatTile label="Students" value={students} accent="brand" />
-        <StatTile label="Parents" value={parents} accent="emerald" />
-        <StatTile label="Tutors" value={tutorRoleCount} accent="brand" />
-        <StatTile label="Pending Approvals" value={pendingVerifications} accent="amber" />
-      </section>
-
-      <section id="verifications" className="card scroll-mt-24 p-6">
-        <TutorVerifications tutors={tutors} />
-      </section>
-
-      <section id="users" className="card scroll-mt-24 p-6">
-        <UsersTable users={users} />
-      </section>
-    </div>
+    <AdminAnalyticsDashboard
+      systemSettings={analyticsData.systemSettings}
+      userCounts={analyticsData.userCounts}
+      monthlyBookingsStats={analyticsData.monthlyBookingsStats}
+      revenueStats={analyticsData.revenueStats}
+      pendingVerificationsCount={analyticsData.pendingVerificationsCount}
+      systemHealth={analyticsData.systemHealth}
+      users={users}
+      tutors={tutors}
+    />
   );
 }

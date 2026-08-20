@@ -19,7 +19,10 @@ import {
   CloseIcon,
   ChatIcon,
   RobotIcon,
+  SettingsIcon,
+  ShieldIcon,
 } from "@/components/icons";
+import { useSearchParams } from "next/navigation";
 
 // Icons are referenced by name so the (server) layout can pass plain serializable
 // data across the RSC boundary instead of serialized JSX elements.
@@ -34,6 +37,8 @@ const ICONS = {
   chart: ChartIcon,
   chat: ChatIcon,
   robot: RobotIcon,
+  settings: SettingsIcon,
+  shield: ShieldIcon,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -41,7 +46,7 @@ export type IconName = keyof typeof ICONS;
 export type NavItem = {
   label: string;
   href?: string; // omit / set `soon` for not-yet-built modules
-  icon: IconName;
+  icon?: IconName;
   soon?: boolean;
 };
 
@@ -103,12 +108,29 @@ export function Sidebar({
   groups: NavGroup[];
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const fallback = name ?? email;
 
-  // Only a real route (no "#") can be "active"; same-page anchor jumps are not.
-  const isActive = (href?: string) =>
-    !!href && !href.includes("#") && pathname === href;
+  // Only a real route (no "#") can be "active"; handles query parameters like ?tab=...
+  const isActive = (href?: string) => {
+    if (!href || href.includes("#")) return false;
+    const [path, query] = href.split("?");
+    if (pathname !== path) return false;
+
+    const currentTab = searchParams ? searchParams.get("tab") || "overview" : "overview";
+    if (query) {
+      const itemParams = new URLSearchParams(query);
+      const itemTab = itemParams.get("tab");
+      return itemTab === currentTab;
+    }
+
+    if (path === "/dashboard/admin") {
+      return currentTab === "overview";
+    }
+
+    return true;
+  };
 
   return (
     <>
@@ -179,14 +201,14 @@ export function Sidebar({
                 </p>
               )}
               {group.items.map((item) => {
-                const Icon = ICONS[item.icon];
+                const Icon = item.icon ? ICONS[item.icon] : null;
                 if (item.soon || !item.href) {
                   return (
                     <span
                       key={item.label}
                       className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-brand-100/40"
                     >
-                      <Icon className="h-5 w-5 shrink-0 text-brand-200/40" />
+                      {Icon && <Icon className="h-5 w-5 shrink-0 text-brand-200/40" />}
                       <span className="flex-1">{item.label}</span>
                       <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-200/60">
                         Soon
@@ -206,11 +228,13 @@ export function Sidebar({
                         : "text-brand-100/80 hover:bg-white/5 hover:text-white"
                     }`}
                   >
-                    <Icon
-                      className={`h-5 w-5 shrink-0 ${
-                        active ? "text-white" : "text-brand-300"
-                      }`}
-                    />
+                    {Icon && (
+                      <Icon
+                        className={`h-5 w-5 shrink-0 ${
+                          active ? "text-white" : "text-brand-300"
+                        }`}
+                      />
+                    )}
                     <span className="flex-1">{item.label}</span>
                   </Link>
                 );

@@ -20,13 +20,15 @@ function navFor(role: string, home: string): NavGroup[] {
     return [
       {
         items: [
-          { label: "Dashboard", href: home, icon: "dashboard" },
-          { label: "Tutor Verifications", href: `${home}#verifications`, icon: "sparkles" },
-          { label: "User Management", href: `${home}#users`, icon: "users" },
+          { label: "Admin Overview", href: `${home}?tab=overview` },
+          { label: "Analytics & Revenue", href: `${home}?tab=analytics` },
+          { label: "Tutor Verifications", href: `${home}?tab=verifications` },
+          { label: "User Policy & Safety", href: `${home}?tab=users` },
+          { label: "Reward Points & Pricing", href: `${home}?tab=settings` },
         ],
       },
       {
-        heading: "Modules",
+        heading: "Modules & Explore",
         items: [
           { label: "Find a Tutor", href: "/dashboard/tutors", icon: "search" },
           { label: "All Bookings", href: "/dashboard/bookings", icon: "calendar" },
