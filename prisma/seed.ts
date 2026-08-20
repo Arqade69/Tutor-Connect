@@ -482,12 +482,53 @@ async function main() {
     ],
   });
 
+  // Seed System Settings
+  await prisma.systemSetting.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
+      id: "default",
+      rewardPointRate: 1.0,
+      rewardPointsPerBooking: 10,
+      premiumMonthlyPrice: 499,
+      premiumAnnualPrice: 4499,
+      platformCommissionRate: 10.0,
+    },
+  });
+
+  // Seed Historical Subscription Payments for Analytics
+  await prisma.subscriptionPayment.deleteMany({});
+  const subscriptionSeedMonths = [
+    { month: "2026-03", count: 8, amount: 499 },
+    { month: "2026-04", count: 12, amount: 499 },
+    { month: "2026-05", count: 15, amount: 499 },
+    { month: "2026-06", count: 18, amount: 499 },
+    { month: "2026-07", count: 22, amount: 499 },
+    { month: "2026-08", count: 25, amount: 499 },
+  ];
+
+  for (const item of subscriptionSeedMonths) {
+    for (let i = 0; i < item.count; i++) {
+      const day = String(Math.floor(Math.random() * 25) + 1).padStart(2, "0");
+      await prisma.subscriptionPayment.create({
+        data: {
+          userId: demoStudent.id,
+          amount: item.amount,
+          planType: i % 5 === 0 ? "annual" : "monthly",
+          status: "completed",
+          createdAt: new Date(`${item.month}-${day}T12:00:00Z`),
+        },
+      });
+    }
+  }
+
   console.log("✅ Seeded:");
   console.log(`   • Demo student : ${demoStudent.email}`);
   console.log(`   • Demo parent  : ${demoParent.email}`);
   console.log(`   • Demo admin   : ${demoAdmin.email}`);
   console.log(`   • Demo tutor   : ${demoTutorUser.email}`);
   console.log(`   • Total Tutors : ${allTutorProfiles.length}`);
+  console.log(`   • System Settings & Subscription Payments created.`);
   console.log(`   • Sample reviews, availability slots, bookings & messages created.`);
 }
 

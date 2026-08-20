@@ -37,6 +37,9 @@ model User {
   aiLastReset   DateTime  @default(now())
   // "active" | "suspended"  (managed by admin)
   status        String    @default("active")
+  isFlagged     Boolean   @default(false)
+  flagReason    String?
+  rewardPoints  Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -44,13 +47,14 @@ model User {
   studentProfiles StudentProfile[] @relation("ParentStudents")
   tutorProfile    TutorProfile?
 
-  reviews          Review[]
-  studentBookings  Booking[]       @relation("StudentBookings")
-  conversations1   Conversation[]  @relation("ConvParticipant1")
-  conversations2   Conversation[]  @relation("ConvParticipant2")
-  sentMessages     Message[]
-  notifications    Notification[]
-  tutorBotMessages TutorBotMessage[]
+  reviews              Review[]
+  studentBookings      Booking[]             @relation("StudentBookings")
+  conversations1       Conversation[]        @relation("ConvParticipant1")
+  conversations2       Conversation[]        @relation("ConvParticipant2")
+  sentMessages         Message[]
+  notifications        Notification[]
+  tutorBotMessages     TutorBotMessage[]
+  subscriptionPayments SubscriptionPayment[]
 
   @@index([role])
 }
@@ -264,3 +268,33 @@ model TutorBotMessage {
   @@index([userId])
   @@index([userId, createdAt])
 }
+
+// =====================================================================
+//  Module: Admin System Settings & Revenue Analytics
+//  Models: SystemSetting, SubscriptionPayment
+// =====================================================================
+
+model SystemSetting {
+  id                     String   @id @default("default")
+  rewardPointRate        Float    @default(1.0)  // BDT conversion per point
+  rewardPointsPerBooking Int      @default(10)   // Points earned per booking
+  premiumMonthlyPrice    Int      @default(499)  // BDT per month
+  premiumAnnualPrice     Int      @default(4499) // BDT per year
+  platformCommissionRate Float    @default(10.0) // % commission on tutor sessions
+  updatedAt              DateTime @updatedAt
+}
+
+model SubscriptionPayment {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int
+  planType  String   @default("monthly") // "monthly" | "annual"
+  status    String   @default("completed") // "completed" | "refunded"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
