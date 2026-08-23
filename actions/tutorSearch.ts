@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { calculateDistanceKm, getCoordinatesForLocation } from "@/lib/location";
 
 export type TutorFilterInput = {
   query?: string;
@@ -11,10 +12,29 @@ export type TutorFilterInput = {
   dayOfWeek?: string;
   minFee?: number;
   maxFee?: number;
+  minRating?: number;
+  userLat?: number;
+  userLng?: number;
+  maxDistanceKm?: number;
+  sortBy?: "distance" | "rating" | "fee_asc" | "fee_desc" | "newest";
 };
 
 export async function searchTutors(filters: TutorFilterInput = {}) {
-  const { query, subject, classLevel, district, medium, dayOfWeek, minFee, maxFee } = filters;
+  const {
+    query,
+    subject,
+    classLevel,
+    district,
+    medium,
+    dayOfWeek,
+    minFee,
+    maxFee,
+    minRating,
+    userLat,
+    userLng,
+    maxDistanceKm,
+    sortBy = "rating",
+  } = filters;
 
   const whereClause: any = {
     isPublic: true,
@@ -71,6 +91,8 @@ export async function searchTutors(filters: TutorFilterInput = {}) {
           image: true,
           location: true,
           district: true,
+          latitude: true,
+          longitude: true,
         },
       },
       availabilitySlots: true,
@@ -85,11 +107,23 @@ export async function searchTutors(filters: TutorFilterInput = {}) {
     },
   });
 
-  return tutors.map((t) => {
+  let mappedTutors = tutors.map((t) => {
     const avgRating =
       t.reviews.length > 0
         ? Number((t.reviews.reduce((acc, r) => acc + r.rating, 0) / t.reviews.length).toFixed(1))
         : 5.0;
+
+    // Resolve lat & lng
+    const coords =
+      t.user.latitude && t.user.longitude
+        ? { lat: t.user.latitude, lng: t.user.longitude }
+        : getCoordinatesForLocation(t.user.location ?? undefined, t.user.district ?? undefined);
+
+    let distanceKm: number | undefined = undefined;
+
+    if (userLat !== undefined && userLng !== undefined) {
+      distanceKm = calculateDistanceKm(userLat, userLng, coords.lat, coords.lng);
+    }
 
     return {
       id: t.id,
@@ -99,6 +133,9 @@ export async function searchTutors(filters: TutorFilterInput = {}) {
       image: t.user.image,
       location: t.user.location ?? t.user.district ?? "Bangladesh",
       district: t.user.district ?? "Dhaka",
+      latitude: coords.lat,
+      longitude: coords.lng,
+      distanceKm,
       tagline: t.tagline ?? "Experienced Tutor",
       bio: t.bio,
       subjects: t.subjects,
@@ -111,6 +148,31 @@ export async function searchTutors(filters: TutorFilterInput = {}) {
       availableDays: Array.from(new Set(t.availabilitySlots.map((s) => s.dayOfWeek))),
     };
   });
+
+  // Filter by min rating if specified
+  if (minRating !== undefined && minRating > 0) {
+    mappedTutors = mappedTutors.filter((t) => t.rating >= minRating);
+  }
+
+  // Filter by radius if maxDistanceKm and user location are set
+  if (userLat !== undefined && userLng !== undefined && maxDistanceKm !== undefined && maxDistanceKm > 0) {
+    mappedTutors = mappedTutors.filter(
+      (t) => t.distanceKm !== undefined && t.distanceKm <= maxDistanceKm
+    );
+  }
+
+  // Apply sorting
+  if (sortBy === "distance" && userLat !== undefined && userLng !== undefined) {
+    mappedTutors.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
+  } else if (sortBy === "rating") {
+    mappedTutors.sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
+  } else if (sortBy === "fee_asc") {
+    mappedTutors.sort((a, b) => a.hourlyFee - b.hourlyFee);
+  } else if (sortBy === "fee_desc") {
+    mappedTutors.sort((a, b) => b.hourlyFee - a.hourlyFee);
+  }
+
+  return mappedTutors;
 }
 
 export async function getTutorDetails(tutorId: string) {

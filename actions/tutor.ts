@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { SUBJECTS, CLASS_LEVELS, TEACHING_MEDIUMS, DAYS_OF_WEEK } from "@/lib/constants";
 import { guard, clean, requireRole, revalidatePath } from "./_shared";
 
+import { getCoordinatesForLocation } from "@/lib/location";
+
 async function getOwnTutorProfile(userId: string) {
   const profile = await prisma.tutorProfile.findUnique({ where: { userId } });
   if (!profile) throw new Error("Save your profile first, then set your availability.");
@@ -22,6 +24,11 @@ export async function updateTutorProfile(formData: FormData) {
     const medium = clean(formData.get("medium")) || "Bangla";
     const hourlyFeeRaw = clean(formData.get("hourlyFee"));
 
+    const district = clean(formData.get("district"));
+    const location = clean(formData.get("location"));
+    const latRaw = clean(formData.get("latitude"));
+    const lngRaw = clean(formData.get("longitude"));
+
     if (subjects.length === 0) throw new Error("Select at least one subject.");
     if (subjects.some((s) => !SUBJECTS.includes(s as (typeof SUBJECTS)[number])))
       throw new Error("Invalid subject selected.");
@@ -37,6 +44,28 @@ export async function updateTutorProfile(formData: FormData) {
     if (!Number.isFinite(hourlyFee) || hourlyFee <= 0)
       throw new Error("Enter a valid hourly fee.");
 
+    let latitude: number | null = latRaw ? Number(latRaw) : null;
+    let longitude: number | null = lngRaw ? Number(lngRaw) : null;
+
+    if (latitude !== null && !Number.isFinite(latitude)) latitude = null;
+    if (longitude !== null && !Number.isFinite(longitude)) longitude = null;
+
+    if ((latitude === null || longitude === null) && (district || location)) {
+      const fallback = getCoordinatesForLocation(location ?? undefined, district ?? undefined);
+      latitude = fallback.lat;
+      longitude = fallback.lng;
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        district,
+        location,
+        latitude,
+        longitude,
+      },
+    });
+
     await prisma.tutorProfile.upsert({
       where: { userId: user.id },
       update: { tagline, bio, subjects, classLevels, medium, hourlyFee },
@@ -44,6 +73,7 @@ export async function updateTutorProfile(formData: FormData) {
     });
 
     revalidatePath("/dashboard/tutor");
+    revalidatePath("/dashboard/tutors");
   });
 }
 

@@ -31,6 +31,8 @@ model User {
   phone         String?
   location      String?
   district      String?
+  latitude      Float?
+  longitude     Float?
   isPremium     Boolean   @default(false)
   // AI Study Assistant daily usage tracking (free-tier limit)
   aiDailyCount  Int       @default(0)

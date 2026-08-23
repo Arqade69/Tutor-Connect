@@ -10,7 +10,7 @@ async function main() {
   // ------------------------------------------------------------------
   const demoStudent = await prisma.user.upsert({
     where: { email: "demo-student@tutorconnect.local" },
-    update: {},
+    update: { latitude: 23.7772, longitude: 90.4054 },
     create: {
       email: "demo-student@tutorconnect.local",
       name: "Ayesha Siddiqua",
@@ -19,6 +19,8 @@ async function main() {
       phone: "01711223344",
       location: "Mohakhali",
       district: "Dhaka",
+      latitude: 23.7772,
+      longitude: 90.4054,
       isPremium: true,
       academicInfo: {
         create: [
@@ -34,7 +36,7 @@ async function main() {
 
   const demoParent = await prisma.user.upsert({
     where: { email: "demo-parent@tutorconnect.local" },
-    update: {},
+    update: { latitude: 23.7461, longitude: 90.3742 },
     create: {
       email: "demo-parent@tutorconnect.local",
       name: "Karim Uddin",
@@ -43,6 +45,8 @@ async function main() {
       phone: "01822334455",
       location: "Dhanmondi",
       district: "Dhaka",
+      latitude: 23.7461,
+      longitude: 90.3742,
       studentProfiles: {
         create: [
           {
@@ -64,7 +68,7 @@ async function main() {
 
   const demoAdmin = await prisma.user.upsert({
     where: { email: "demo-admin@tutorconnect.local" },
-    update: {},
+    update: { latitude: 23.7925, longitude: 90.4078 },
     create: {
       email: "demo-admin@tutorconnect.local",
       name: "Platform Admin",
@@ -73,6 +77,8 @@ async function main() {
       phone: "01900000000",
       location: "Gulshan",
       district: "Dhaka",
+      latitude: 23.7925,
+      longitude: 90.4078,
     },
   });
 
@@ -81,8 +87,10 @@ async function main() {
     where: { email: "demo-tutor@tutorconnect.local" },
     update: {
       name: "Farkhanda Haque Neesa",
-      location: "Dhanmondi",
+      location: "Dhanmondi 27",
       district: "Dhaka",
+      latitude: 23.7480,
+      longitude: 90.3745,
     },
     create: {
       email: "demo-tutor@tutorconnect.local",
@@ -90,8 +98,10 @@ async function main() {
       role: "tutor",
       onboarded: true,
       phone: "01933445566",
-      location: "Dhanmondi",
+      location: "Dhanmondi 27",
       district: "Dhaka",
+      latitude: 23.7480,
+      longitude: 90.3745,
     },
   });
 
@@ -120,14 +130,16 @@ async function main() {
     },
   });
 
-  // Additional Tutors for rich search & filtering testing
+  // Additional Tutors for rich search & filtering testing across various locations
   const additionalTutorsData = [
     {
       email: "tanvir.chemistry@tutorconnect.local",
       name: "Dr. Tanvir Rahman",
       phone: "01755667788",
-      location: "Uttara",
+      location: "Uttara Sector 7",
       district: "Dhaka",
+      latitude: 23.8759,
+      longitude: 90.3795,
       tagline: "BUET Alumnus | Organic & Physical Chemistry Specialist",
       bio: "PhD in Chemical Sciences. 8 years teaching experience in HSC Chemistry and Medical/Engineering Admission prep.",
       subjects: ["Chemistry", "Biology"],
@@ -142,6 +154,8 @@ async function main() {
       phone: "01866778899",
       location: "Panchlaish",
       district: "Chattogram",
+      latitude: 22.3592,
+      longitude: 91.8215,
       tagline: "IELTS 8.5 | O/A Level English Language & Literature",
       bio: "Empowering students in English communication, grammar, essay writing, and international standardized exams.",
       subjects: ["English", "IELTS"],
@@ -156,12 +170,78 @@ async function main() {
       phone: "01977889900",
       location: "Zindabazar",
       district: "Sylhet",
+      latitude: 24.8949,
+      longitude: 91.8687,
       tagline: "Competitive Math & Programming Mentor",
       bio: "Software Engineer passionate about teaching Mathematics, ICT, and Computer Programming fundamentals to school and college students.",
       subjects: ["Higher Math", "General Math", "ICT", "Programming"],
       classLevels: ["SSC", "HSC", "A-Level"],
       medium: "Bangla",
       hourlyFee: 650,
+      verificationStatus: "approved",
+    },
+    {
+      email: "novera.bio@tutorconnect.local",
+      name: "Novera Ahmed",
+      phone: "01711998877",
+      location: "Gulshan 2",
+      district: "Dhaka",
+      latitude: 23.7925,
+      longitude: 90.4078,
+      tagline: "DMC Graduate | Biology & Medical Admission Specialist",
+      bio: "Top scorer in Medical Admission Test. Specializing in Botany, Zoology, and Human Physiology for HSC students.",
+      subjects: ["Biology", "Chemistry"],
+      classLevels: ["HSC", "Admission (Uni)"],
+      medium: "Both",
+      hourlyFee: 950,
+      verificationStatus: "approved",
+    },
+    {
+      email: "rafiq.physics@tutorconnect.local",
+      name: "Prof. Rafiqul Islam",
+      phone: "01833445566",
+      location: "Mirpur 10",
+      district: "Dhaka",
+      latitude: 23.8069,
+      longitude: 90.3687,
+      tagline: "Retired College Professor | Physics & Mechanics Master",
+      bio: "Over 20 years of experience teaching Physics to HSC & SSC students in Mirpur area.",
+      subjects: ["Physics", "General Math"],
+      classLevels: ["SSC", "HSC"],
+      medium: "Bangla",
+      hourlyFee: 700,
+      verificationStatus: "approved",
+    },
+    {
+      email: "samira.ict@tutorconnect.local",
+      name: "Samira Khan",
+      phone: "01922334455",
+      location: "Bashundhara R/A",
+      district: "Dhaka",
+      latitude: 23.8151,
+      longitude: 90.4255,
+      tagline: "NSU CS Senior | ICT, Coding & General Math",
+      bio: "Passionate CS student offering home & online tutoring in ICT, Web Basics, and SSC/Class 9-10 Math.",
+      subjects: ["ICT", "General Math", "Programming"],
+      classLevels: ["Class 9-10", "SSC", "HSC"],
+      medium: "English",
+      hourlyFee: 600,
+      verificationStatus: "approved",
+    },
+    {
+      email: "asif.accounting@tutorconnect.local",
+      name: "Asif Mahmood",
+      phone: "01744556677",
+      location: "Banani Block F",
+      district: "Dhaka",
+      latitude: 23.7937,
+      longitude: 90.4047,
+      tagline: "ACCA Candidate | Accounting & Finance Specialist",
+      bio: "Specializing in Commerce stream subjects: Accounting, Finance & Business Studies for SSC, HSC & O/A Levels.",
+      subjects: ["Accounting", "Finance", "Economics"],
+      classLevels: ["SSC", "HSC", "O-Level", "A-Level"],
+      medium: "Both",
+      hourlyFee: 850,
       verificationStatus: "approved",
     },
   ];
@@ -171,7 +251,10 @@ async function main() {
   for (const t of additionalTutorsData) {
     const user = await prisma.user.upsert({
       where: { email: t.email },
-      update: {},
+      update: {
+        latitude: t.latitude,
+        longitude: t.longitude,
+      },
       create: {
         email: t.email,
         name: t.name,
@@ -180,6 +263,8 @@ async function main() {
         phone: t.phone,
         location: t.location,
         district: t.district,
+        latitude: t.latitude,
+        longitude: t.longitude,
       },
     });
 
