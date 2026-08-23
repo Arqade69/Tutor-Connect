@@ -31,26 +31,31 @@ model User {
   phone         String?
   location      String?
   district      String?
-  isPremium     Boolean   @default(false)
+  isPremium        Boolean   @default(false)
+  subscriptionPlan String    @default("free") // "free" | "monthly" | "yearly"
+  premiumExpiresAt DateTime?
+  rewardPoints     Int       @default(0)
   // AI Study Assistant daily usage tracking (free-tier limit)
-  aiDailyCount  Int       @default(0)
-  aiLastReset   DateTime  @default(now())
+  aiDailyCount     Int       @default(0)
+  aiLastReset      DateTime  @default(now())
   // "active" | "suspended"  (managed by admin)
-  status        String    @default("active")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  status           String    @default("active")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   academicInfo    AcademicInfo[]
   studentProfiles StudentProfile[] @relation("ParentStudents")
   tutorProfile    TutorProfile?
 
-  reviews          Review[]
-  studentBookings  Booking[]       @relation("StudentBookings")
-  conversations1   Conversation[]  @relation("ConvParticipant1")
-  conversations2   Conversation[]  @relation("ConvParticipant2")
-  sentMessages     Message[]
-  notifications    Notification[]
-  tutorBotMessages TutorBotMessage[]
+  reviews              Review[]
+  studentBookings      Booking[]             @relation("StudentBookings")
+  conversations1       Conversation[]        @relation("ConvParticipant1")
+  conversations2       Conversation[]        @relation("ConvParticipant2")
+  sentMessages         Message[]
+  notifications        Notification[]
+  tutorBotMessages     TutorBotMessage[]
+  subscriptionPayments SubscriptionPayment[]
+  rewardLogs           RewardLog[]
 
   @@index([role])
 }
@@ -264,3 +269,63 @@ model TutorBotMessage {
   @@index([userId])
   @@index([userId, createdAt])
 }
+
+// =====================================================================
+//  Module: Subscription & Payment System (UddoktaPay Gateway)
+//  Model: SubscriptionPayment
+// =====================================================================
+
+model SubscriptionPayment {
+  id            String    @id @default(cuid())
+  userId        String
+  planType      String    // "monthly" | "yearly"
+  amount        Int       // 150 or 1500
+  referenceCode String    @unique // e.g. "UP-892140"
+  invoiceId     String?   @unique // UddoktaPay invoice_id e.g. "UP170281"
+  transactionId String?   @unique // bKash/Nagad TrxID
+  paymentMethod String?   // "bkash" | "nagad" | "rocket" | "card"
+  status        String    @default("pending") // "pending" | "verified" | "failed"
+  redeemedPoints Int      @default(0)          // reward points redeemed for discount
+  discountAmount Int      @default(0)          // Taka discount applied from points
+  rawPayload    String?   // JSON response from UddoktaPay
+  verifiedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([referenceCode])
+  @@index([invoiceId])
+  @@index([transactionId])
+  @@index([status])
+}
+
+// =====================================================================
+//  Module: Reward Points System
+//  Models: SystemSetting, RewardLog
+// =====================================================================
+
+// SYSTEM_SETTINGS - admin-configurable key-value settings
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. "points_per_taka", "points_booking"
+  value     String   // e.g. "20"
+  updatedAt DateTime @updatedAt
+}
+
+// REWARD_LOGS - tracks each point earning and redemption event
+model RewardLog {
+  id          String   @id @default(cuid())
+  userId      String
+  points      Int      // Positive = earned, Negative = redeemed
+  action      String   // "booking_created" | "session_completed" | "subscription_renewed" | "review_written" | "discount_redeemed"
+  description String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+}
+

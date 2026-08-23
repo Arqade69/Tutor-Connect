@@ -19,7 +19,7 @@ export async function searchUsers(query: string) {
     where: {
       AND: [
         { id: { not: parent.id } },
-        { role: { not: "admin" } },
+        { role: "student" },
         {
           OR: [
             { name: { contains: q, mode: "insensitive" } },
@@ -70,8 +70,8 @@ export async function linkExistingStudent(formData: FormData) {
     });
 
     if (!targetUser) throw new Error("User not found.");
-    if (targetUser.role === "admin")
-      throw new Error("Cannot link an admin account.");
+    if (targetUser.role !== "student")
+      throw new Error("Only users with the Student role can be added as a student.");
 
     // Check if already linked
     const alreadyLinked = await prisma.studentProfile.findFirst({

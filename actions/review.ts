@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import { awardRewardPoints } from "./rewards";
 
 // A student/parent can only review a tutor once per completed session — the
 // review is created against a specific Booking, not just the tutor, so the
@@ -60,6 +61,13 @@ export async function createReview(bookingId: string, rating: number, comment: s
     revalidatePath(`/dashboard/tutors/${booking.tutorId}`);
     revalidatePath("/dashboard/tutors");
     revalidatePath("/dashboard/bookings");
+
+    // Award reward points to Premium users for writing a review
+    await awardRewardPoints(
+      currentUser.id,
+      "review_written",
+      `Wrote a ${ratingValue}-star review`
+    );
 
     return { success: true, reviewId: review.id };
   } catch (err: any) {

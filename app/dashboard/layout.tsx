@@ -9,6 +9,7 @@ function explore(includeAi = true): NavGroup {
     items: [
       { label: "Find a Tutor", href: "/dashboard/tutors", icon: "search" },
       ...(includeAi ? [{ label: "TutorBot AI", href: "/dashboard/tutorbot", icon: "robot" as const }] : []),
+      { label: "Subscription & Plans", href: "/dashboard/subscription", icon: "crown" },
       { label: "My Bookings", href: "/dashboard/bookings", icon: "calendar" },
       { label: "Chat Room", href: "/dashboard/chat", icon: "chat" },
     ],
@@ -23,6 +24,7 @@ function navFor(role: string, home: string): NavGroup[] {
           { label: "Dashboard", href: home, icon: "dashboard" },
           { label: "Tutor Verifications", href: `${home}#verifications`, icon: "sparkles" },
           { label: "User Management", href: `${home}#users`, icon: "users" },
+          { label: "Reward Settings", href: "/dashboard/admin/reward-settings", icon: "gift" },
         ],
       },
       {

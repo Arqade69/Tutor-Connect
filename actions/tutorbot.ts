@@ -21,6 +21,7 @@ const STUDENT_SYSTEM_PROMPT = `You are TutorBot, a friendly and encouraging AI s
 - Be patient, warm, and supportive — like a great tutor would be.
 
 ## Response Guidelines
+- Address ONLY the user's latest question. Do NOT repeat, summarize, re-answer, or combine responses for previous questions from the chat history.
 - Use structured formatting: numbered steps, bullet points, and clear headings.
 - For math/science problems, show each step of the solution process.
 - Keep language simple and accessible for secondary and higher-secondary students.
@@ -52,6 +53,7 @@ const TUTOR_SYSTEM_PROMPT = `You are TutorBot AI, an intelligent AI Teaching Ass
 - Be professional, creative, efficient, and academically rigorous — acting as a peer-level teaching assistant for professional tutors.
 
 ## Response Guidelines
+- Address ONLY the user's latest question or instruction. Do NOT repeat, summarize, re-answer, or combine responses for previous questions from the chat history. Produce ONE focused response for the current question only.
 - Use structured formatting: clear headers, bullet points, numbered lists, tables, and code blocks for formulas/code.
 - Provide step-by-step solution guides, marking schemes, and explanations tailored for teaching.
 - Address the user as an educator/tutor.
@@ -301,6 +303,33 @@ If you find this topic challenging or want personalized 1-on-1 guidance, you can
 // Helpers
 // ---------------------------------------------------------------------------
 
+function getGeminiApiKey(): string {
+  const envKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GEMINI_APIKEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY;
+
+  if (envKey) return envKey.trim();
+
+  try {
+    const fs = require("node:fs");
+    const path = require("node:path");
+    const envPath = path.join(process.cwd(), ".env");
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, "utf-8");
+      const match = envContent.match(/(?:GEMINI_API_KEY|GOOGLE_API_KEY|GOOGLE_GENAI_API_KEY)=["']?([^"'\r\n]+)["']?/);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+  } catch {
+    // Ignore error
+  }
+
+  return "";
+}
+
 // Google AI Studio / Gemini API keys typically start with "AIza" or "AQ."
 // and contain URL-safe characters with no whitespace.
 function isValidGeminiKeyFormat(key: string): boolean {
@@ -392,11 +421,7 @@ export async function sendTutorBotMessage(
     pastMessages.reverse();
 
     // ---- Generate AI Response (Live Gemini or Educational Fallback) -------
-    const apiKey =
-      process.env.GEMINI_API_KEY ||
-      process.env.GEMINI_APIKEY ||
-      process.env.GOOGLE_API_KEY ||
-      process.env.GOOGLE_GENAI_API_KEY;
+    const apiKey = getGeminiApiKey();
     let aiText = "";
 
     if (!apiKey) {
@@ -410,9 +435,9 @@ export async function sendTutorBotMessage(
       // error from the SDK.
       console.warn(
         `[TutorBot] GEMINI key is set but doesn't look like a valid Gemini API key ` +
-          `(expected a valid non-empty API key string). Got a value starting with "${apiKey.slice(0, 6)}...". ` +
-          `Get a key from https://aistudio.google.com/apikey and set it as GEMINI_API_KEY in .env. ` +
-          `Using offline fallback for now.`
+        `(expected a valid non-empty API key string). Got a value starting with "${apiKey.slice(0, 6)}...". ` +
+        `Get a key from https://aistudio.google.com/apikey and set it as GEMINI_API_KEY in .env. ` +
+        `Using offline fallback for now.`
       );
     } else {
       try {
@@ -420,11 +445,30 @@ export async function sendTutorBotMessage(
         const systemPrompt =
           user.role === "tutor" ? TUTOR_SYSTEM_PROMPT : STUDENT_SYSTEM_PROMPT;
 
+        // Sanitize history turns to strictly alternate user -> model -> user -> model
+        const historyContents: { role: string; parts: { text: string }[] }[] = [];
+        for (const m of pastMessages) {
+          const role = m.role === "assistant" ? "model" : "user";
+          const lastRole =
+            historyContents.length > 0
+              ? historyContents[historyContents.length - 1].role
+              : null;
+          if (role !== lastRole) {
+            historyContents.push({ role, parts: [{ text: m.text }] });
+          }
+        }
+        if (historyContents.length > 0 && historyContents[0].role !== "user") {
+          historyContents.shift();
+        }
+        if (
+          historyContents.length > 0 &&
+          historyContents[historyContents.length - 1].role !== "model"
+        ) {
+          historyContents.pop();
+        }
+
         const contents = [
-          ...pastMessages.map((m) => ({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: m.text }],
-          })),
+          ...historyContents,
           {
             role: "user",
             parts: [{ text }],
@@ -440,8 +484,15 @@ export async function sendTutorBotMessage(
         });
 
         aiText = response.text?.trim() ?? "";
-      } catch (geminiError) {
-        console.warn("[TutorBot] Gemini API call failed, using fallback:", geminiError);
+      } catch (geminiError: any) {
+        console.warn(`[TutorBot] Gemini API call failed for model ${GEMINI_MODEL}:`, geminiError?.message || geminiError);
+        const errMsg = String(geminiError?.message || geminiError);
+        if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+          return {
+            ok: false,
+            error: "Gemini 3.6 Flash daily API quota limit reached (20 requests/day free tier limit on Google AI Studio). Please try again later or check your API key quota.",
+          };
+        }
       }
     }
 

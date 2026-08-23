@@ -223,7 +223,7 @@ function LinkStudentForm({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-500">
-        Search for an existing user by name or email to link them as a student under your account.
+        Search for an registered student by name or email to link them under your account.
         They will receive an in-app notification.
       </p>
 

@@ -19,6 +19,8 @@ import {
   CloseIcon,
   ChatIcon,
   RobotIcon,
+  CrownIcon,
+  GiftIcon,
 } from "@/components/icons";
 
 // Icons are referenced by name so the (server) layout can pass plain serializable
@@ -34,6 +36,8 @@ const ICONS = {
   chart: ChartIcon,
   chat: ChatIcon,
   robot: RobotIcon,
+  crown: CrownIcon,
+  gift: GiftIcon,
 } as const;
 
 export type IconName = keyof typeof ICONS;

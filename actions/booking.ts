@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import { awardRewardPoints } from "./rewards";
 
 export type BookingSlotInput = {
   slotId?: string;
@@ -149,6 +150,13 @@ export async function createBooking(input: CreateBookingInput) {
   revalidatePath("/dashboard/bookings");
   revalidatePath(`/dashboard/tutors/${input.tutorId}`);
 
+  // Award reward points to Premium users for booking a session
+  await awardRewardPoints(
+    currentUser.id,
+    "booking_created",
+    `Booked a ${type} session for ${input.subject}`
+  );
+
   return {
     success: true,
     count: 1,
@@ -264,6 +272,15 @@ export async function updateBookingStatus(
     where: { id: bookingId },
     data: { status },
   });
+
+  // Award reward points when a session is marked as completed
+  if (status === "completed") {
+    await awardRewardPoints(
+      booking.studentId,
+      "session_completed",
+      `Completed a tutoring session`
+    );
+  }
 
   revalidatePath("/dashboard/bookings");
   return { success: true };
