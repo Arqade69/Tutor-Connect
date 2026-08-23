@@ -567,9 +567,9 @@ export function AdminAnalyticsDashboard({
       {activeTab === "settings" && (
         <div className="card p-6 shadow-sm border border-slate-200 space-y-6">
           <div className="border-b border-slate-200 pb-4">
-            <h2 className="text-lg font-bold text-slate-900">Reward Point Conversion Rates & Subscription Pricing</h2>
+            <h2 className="text-lg font-bold text-slate-900">Subscription Pricing & Platform Settings</h2>
             <p className="text-xs text-slate-500">
-              Configure system-wide reward points rules, student/tutor premium subscription fees, and platform commission.
+              Configure student/tutor premium subscription fees and platform commission.
             </p>
           </div>
 
@@ -585,42 +585,6 @@ export function AdminAnalyticsDashboard({
             onSubmit={() => setSettingsSaved(true)}
             className="space-y-6 max-w-3xl"
           >
-            {/* Reward Points Section */}
-            <div className="space-y-4 bg-slate-50 p-5 rounded-xl border border-slate-200">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <span>🎁</span> Reward Point Conversion Rates
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Point Value Conversion Rate (BDT per Point)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    name="rewardPointRate"
-                    defaultValue={systemSettings.rewardPointRate}
-                    className="input w-full"
-                    required
-                  />
-                  <p className="text-[11px] text-slate-500 mt-1">1 Reward Point = X BDT discount value on bookings.</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Reward Points Earned per Completed Booking
-                  </label>
-                  <input
-                    type="number"
-                    name="rewardPointsPerBooking"
-                    defaultValue={systemSettings.rewardPointsPerBooking}
-                    className="input w-full"
-                    required
-                  />
-                  <p className="text-[11px] text-slate-500 mt-1">Points awarded to student upon session completion.</p>
-                </div>
-              </div>
-            </div>
 
             {/* Subscription Pricing Section */}
             <div className="space-y-4 bg-slate-50 p-5 rounded-xl border border-slate-200">

@@ -12,9 +12,24 @@ export default async function TutorDashboard() {
   if (!user) redirect("/login");
   if (user.role !== "tutor") redirect(dashboardFor(user.role));
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      district: true,
+      location: true,
+      latitude: true,
+      longitude: true,
+    },
+  });
+
   const profile = await prisma.tutorProfile.findUnique({
     where: { userId: user.id },
     include: {
+      user: true,
       availabilitySlots: { orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] },
     },
   });
@@ -25,12 +40,12 @@ export default async function TutorDashboard() {
         <h1 className="text-2xl font-bold text-slate-900">
           Welcome back, {user.name?.split(" ")[0] ?? "Tutor"} 👋
         </h1>
-        <p className="mt-1 text-slate-500">Manage your public profile and weekly availability.</p>
+        <p className="mt-1 text-slate-500">Manage your public profile, location for Google Maps discovery, and weekly availability.</p>
       </header>
 
       {/* Public profile */}
       <section id="profile" className="card scroll-mt-24 p-6">
-        <TutorProfileForm profile={profile} />
+        <TutorProfileForm profile={profile} user={dbUser} />
       </section>
 
       {/* Weekly schedule */}
