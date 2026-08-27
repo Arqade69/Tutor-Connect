@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { searchTutors, type TutorFilterInput } from "@/actions/tutorSearch";
 import { getOrCreateConversation } from "@/actions/chat";
 import { TutorMapDiscovery, type TutorMapItem } from "@/components/TutorMapDiscovery";
-import { DISTRICT_COORDINATES, formatDistance } from "@/lib/location";
+import { DISTRICT_COORDINATES, formatDistance, geocodeAddress } from "@/lib/location";
 import {
   SUBJECTS,
   CLASS_LEVELS,
@@ -48,8 +48,9 @@ export function TutorSearchClient({
   const [maxFee, setMaxFee] = useState<number>(3000);
   const [minRating, setMinRating] = useState<number>(0);
 
-  // Geospatial Search State
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  // Geospatial Search State (defaulted to central location so range circle is always rendered)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(DISTRICT_COORDINATES["Dhaka"]);
+  const [locationLabel, setLocationLabel] = useState<string>("Dhaka (Central)");
   const [locationStatus, setLocationStatus] = useState<string>("");
   const [maxDistanceKm, setMaxDistanceKm] = useState<number>(25);
   const [sortBy, setSortBy] = useState<"rating" | "distance" | "fee_asc" | "fee_desc">("rating");
@@ -107,17 +108,45 @@ export function TutorSearchClient({
     applyFilters,
   ]);
 
-  // Update map center when district changes
+  // Update map center and pinpoint location when district changes
   useEffect(() => {
     if (district !== "All" && DISTRICT_COORDINATES[district]) {
-      setMapCenter(DISTRICT_COORDINATES[district]);
-    } else if (userLocation) {
-      setMapCenter(userLocation);
+      const coords = DISTRICT_COORDINATES[district];
+      setMapCenter(coords);
+      setUserLocation(coords);
+      setLocationLabel(district);
     }
-  }, [district, userLocation]);
+  }, [district]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handlePinpointLocation = async (locQuery: string) => {
+    if (!locQuery.trim()) return;
+    setLocationStatus(`Pinpointing "${locQuery}"...`);
+    const result = await geocodeAddress(locQuery);
+    if (result) {
+      setUserLocation(result.coords);
+      setLocationLabel(result.label);
+      setMapCenter(result.coords);
+      setSortBy("distance");
+      setLocationStatus(`📍 Pinpointed: ${result.label}`);
+      setTimeout(() => setLocationStatus(""), 4000);
+    } else {
+      setLocationStatus(`Location "${locQuery}" not found. Showing general results.`);
+      setTimeout(() => setLocationStatus(""), 4000);
+    }
+  };
+
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (query.trim()) {
+      // Check if search query corresponds to a specific area/locality
+      const geocoded = await geocodeAddress(query);
+      if (geocoded) {
+        setUserLocation(geocoded.coords);
+        setLocationLabel(geocoded.label);
+        setMapCenter(geocoded.coords);
+        setSortBy("distance");
+      }
+    }
     applyFilters();
   };
 
@@ -127,7 +156,7 @@ export function TutorSearchClient({
       return;
     }
 
-    setLocationStatus("Locating...");
+    setLocationStatus("Locating via GPS...");
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = {
@@ -135,6 +164,7 @@ export function TutorSearchClient({
           lng: Number(position.coords.longitude.toFixed(6)),
         };
         setUserLocation(coords);
+        setLocationLabel("Your Live Location");
         setMapCenter(coords);
         setSortBy("distance");
         setLocationStatus("Location updated!");
@@ -142,9 +172,9 @@ export function TutorSearchClient({
       },
       (error) => {
         console.warn("Geolocation error:", error.message);
-        // Fallback to Dhaka center location with friendly feedback
         const fallbackCoords = DISTRICT_COORDINATES["Dhaka"];
         setUserLocation(fallbackCoords);
+        setLocationLabel("Central Dhaka");
         setMapCenter(fallbackCoords);
         setSortBy("distance");
         setLocationStatus("Using central location preset.");
@@ -164,6 +194,7 @@ export function TutorSearchClient({
     setMaxFee(3000);
     setMinRating(0);
     setUserLocation(null);
+    setLocationLabel("");
     setMaxDistanceKm(25);
     setSortBy("rating");
     setSelectedTutorId(null);
@@ -233,7 +264,7 @@ export function TutorSearchClient({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search tutor name, subject (e.g. Physics, Higher Math), or area (e.g. Dhanmondi, Gulshan)..."
+              placeholder="Search area (e.g. Shantinagar, Dhanmondi), tutor name, or subject..."
               className="w-full rounded-xl border-0 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500"
             />
           </div>
@@ -242,10 +273,65 @@ export function TutorSearchClient({
             disabled={isPending}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
-            {isPending ? "Searching..." : "Search"}
+            {isPending ? "Searching..." : "Search & Pinpoint"}
           </button>
         </form>
+
+        {/* Quick Locality Pinpoint Chips */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-brand-200 uppercase tracking-wider">
+            Quick Pinpoint:
+          </span>
+          {["Shantinagar", "Dhanmondi", "Gulshan", "Uttara", "Mirpur", "Mohammadpur", "Badda", "Motijheel"].map((area) => (
+            <button
+              key={area}
+              type="button"
+              onClick={() => {
+                setQuery(area);
+                handlePinpointLocation(area);
+              }}
+              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                locationLabel.toLowerCase().includes(area.toLowerCase()) || query.toLowerCase() === area.toLowerCase()
+                  ? "bg-amber-400 text-slate-950 font-bold shadow-sm"
+                  : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
+              }`}
+            >
+              📍 {area}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Active Pinpoint Status Bar */}
+      {userLocation && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 text-amber-900 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm font-bold text-lg">
+              📍
+            </div>
+            <div>
+              <div className="text-sm font-bold text-slate-900">
+                Pinpointed Location: <span className="text-amber-700 font-extrabold">{locationLabel || "Searched Area"}</span>
+              </div>
+              <div className="text-xs text-slate-600">
+                Showing tutors within <strong>{maxDistanceKm} km range circle</strong>. Distances are computed directly from this pinpoint.
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setUserLocation(null);
+                setLocationLabel("");
+                setSortBy("rating");
+              }}
+              className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition"
+            >
+              Clear Pinpoint ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Control Bar: View Switcher + Sorting + Results Count */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
@@ -345,29 +431,31 @@ export function TutorSearchClient({
             </select>
           </div>
 
-          {/* Search Radius (If User Location Set) */}
-          {userLocation && (
-            <div className="space-y-2 rounded-xl bg-blue-50 p-3 border border-blue-100">
-              <div className="flex justify-between text-xs font-semibold text-slate-700">
-                <span className="uppercase tracking-wider text-blue-800">Search Radius</span>
-                <span className="font-bold text-blue-700">{maxDistanceKm} km</span>
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={50}
-                step={1}
-                value={maxDistanceKm}
-                onChange={(e) => setMaxDistanceKm(Number(e.target.value))}
-                className="w-full accent-blue-600"
-              />
-              <div className="flex justify-between text-[10px] text-blue-600 font-medium">
-                <span>1 km</span>
-                <span>25 km</span>
-                <span>50 km</span>
-              </div>
+          {/* Search Range Radius Circle Control (Always Visible) */}
+          <div className="space-y-2 rounded-xl bg-orange-50 p-3.5 border border-orange-200 shadow-sm">
+            <div className="flex justify-between text-xs font-semibold text-slate-700">
+              <span className="uppercase tracking-wider text-orange-950 font-extrabold flex items-center gap-1">
+                ⭕ Range Circle Radius
+              </span>
+              <span className="font-extrabold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full border border-orange-300">
+                {maxDistanceKm} km
+              </span>
             </div>
-          )}
+            <input
+              type="range"
+              min={1}
+              max={50}
+              step={1}
+              value={maxDistanceKm}
+              onChange={(e) => setMaxDistanceKm(Number(e.target.value))}
+              className="w-full accent-orange-600 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-orange-800 font-semibold">
+              <span>1 km</span>
+              <span>25 km</span>
+              <span>50 km</span>
+            </div>
+          </div>
 
           {/* Subject Filter */}
           <div className="space-y-1.5">
@@ -495,6 +583,7 @@ export function TutorSearchClient({
                 zoom={district !== "All" ? 13 : 11}
                 selectedTutorId={selectedTutorId}
                 userLocation={userLocation}
+                locationLabel={locationLabel}
                 searchRadiusKm={maxDistanceKm}
                 onSelectTutor={(tutor) => setSelectedTutorId(tutor.id)}
                 onOpenChat={handleOpenChat}

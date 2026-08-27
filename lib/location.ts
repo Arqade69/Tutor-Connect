@@ -8,6 +8,7 @@ export type LatLng = {
 // Major Districts & Key Locality Default Coordinates in Bangladesh
 export const DISTRICT_COORDINATES: Record<string, LatLng> = {
   "Dhaka": { lat: 23.8103, lng: 90.4125 },
+  "Shantinagar": { lat: 23.7386, lng: 90.4128 },
   "Dhanmondi": { lat: 23.7461, lng: 90.3742 },
   "Gulshan": { lat: 23.7925, lng: 90.4078 },
   "Uttara": { lat: 23.8759, lng: 90.3795 },
@@ -16,6 +17,25 @@ export const DISTRICT_COORDINATES: Record<string, LatLng> = {
   "Bashundhara": { lat: 23.8151, lng: 90.4255 },
   "Mohakhali": { lat: 23.7772, lng: 90.4054 },
   "Lalmatia": { lat: 23.7548, lng: 90.3721 },
+  "Mohammadpur": { lat: 23.7658, lng: 90.3584 },
+  "Malibagh": { lat: 23.7483, lng: 90.4144 },
+  "Moghbazar": { lat: 23.7494, lng: 90.4037 },
+  "Kakrail": { lat: 23.7371, lng: 90.4072 },
+  "Baily Road": { lat: 23.7420, lng: 90.4082 },
+  "Motijheel": { lat: 23.7330, lng: 90.4170 },
+  "Khilgaon": { lat: 23.7533, lng: 90.4261 },
+  "Rampura": { lat: 23.7612, lng: 90.4217 },
+  "Badda": { lat: 23.7805, lng: 90.4267 },
+  "Banasree": { lat: 23.7634, lng: 90.4350 },
+  "Farmgate": { lat: 23.7561, lng: 90.3872 },
+  "Tejgaon": { lat: 23.7600, lng: 90.3950 },
+  "Kawran Bazar": { lat: 23.7516, lng: 90.3943 },
+  "Agargaon": { lat: 23.7770, lng: 90.3780 },
+  "Shewrapara": { lat: 23.7885, lng: 90.3715 },
+  "Kazipara": { lat: 23.7950, lng: 90.3698 },
+  "Shahbagh": { lat: 23.7388, lng: 90.3958 },
+  "Azimpur": { lat: 23.7290, lng: 90.3853 },
+  "Old Dhaka": { lat: 23.7104, lng: 90.4074 },
   "Chattogram": { lat: 22.3569, lng: 91.7832 },
   "Panchlaish": { lat: 22.3592, lng: 91.8215 },
   "Nasirabad": { lat: 22.3685, lng: 91.8122 },
@@ -27,6 +47,7 @@ export const DISTRICT_COORDINATES: Record<string, LatLng> = {
   "Rangpur": { lat: 25.7439, lng: 89.2752 },
   "Mymensingh": { lat: 24.7471, lng: 90.4203 },
   "Cumilla": { lat: 23.4607, lng: 91.1809 },
+  "Gazipur": { lat: 23.9999, lng: 90.4203 },
   "Gaziupur": { lat: 23.9999, lng: 90.4203 },
   "Narayanganj": { lat: 23.6238, lng: 90.5000 },
 };
@@ -78,6 +99,51 @@ export function getCoordinatesForLocation(locationStr?: string, districtStr?: st
   return DISTRICT_COORDINATES["Dhaka"];
 }
 
+// Geocode address using Google Maps JS Geocoder if available, or fallback to preset matching
+export async function geocodeAddress(query: string): Promise<{ coords: LatLng; label: string } | null> {
+  const cleanQuery = query.trim();
+  if (!cleanQuery) return null;
+
+  // Try Google Maps Geocoder if loaded on client
+  if (typeof window !== "undefined" && window.google && window.google.maps && window.google.maps.Geocoder) {
+    try {
+      const geocoder = new window.google.maps.Geocoder();
+      const searchTarget = cleanQuery.toLowerCase().includes("bangladesh") || cleanQuery.toLowerCase().includes("dhaka")
+        ? cleanQuery
+        : `${cleanQuery}, Dhaka, Bangladesh`;
+
+      const response = await new Promise<any>((resolve, reject) => {
+        geocoder.geocode({ address: searchTarget }, (results: any[], status: string) => {
+          if (status === "OK" && results && results[0]) {
+            resolve(results[0]);
+          } else {
+            reject(status);
+          }
+        });
+      });
+
+      if (response && response.geometry && response.geometry.location) {
+        const lat = Number(response.geometry.location.lat().toFixed(6));
+        const lng = Number(response.geometry.location.lng().toFixed(6));
+        const label = response.formatted_address || cleanQuery;
+        return { coords: { lat, lng }, label };
+      }
+    } catch (e) {
+      console.warn("Google Maps Geocoding fallback to local lookup:", e);
+    }
+  }
+
+  // Local Preset Dictionary Fallback
+  const qLower = cleanQuery.toLowerCase();
+  for (const [key, coords] of Object.entries(DISTRICT_COORDINATES)) {
+    if (qLower.includes(key.toLowerCase()) || key.toLowerCase().includes(qLower)) {
+      return { coords, label: key };
+    }
+  }
+
+  return null;
+}
+
 // Format distance nicely for UI
 export function formatDistance(distanceKm: number): string {
   if (distanceKm < 1) {
@@ -85,3 +151,4 @@ export function formatDistance(distanceKm: number): string {
   }
   return `${distanceKm} km away`;
 }
+

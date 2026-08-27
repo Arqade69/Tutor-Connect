@@ -40,6 +40,7 @@ type TutorMapDiscoveryProps = {
   zoom?: number;
   selectedTutorId?: string | null;
   userLocation?: { lat: number; lng: number } | null;
+  locationLabel?: string;
   searchRadiusKm?: number;
   onSelectTutor?: (tutor: TutorMapItem) => void;
   onOpenChat?: (userId: string) => void;
@@ -54,6 +55,7 @@ export function TutorMapDiscovery({
   zoom = 13,
   selectedTutorId,
   userLocation,
+  locationLabel,
   searchRadiusKm = 10,
   onSelectTutor,
   onOpenChat,
@@ -176,46 +178,61 @@ export function TutorMapDiscovery({
     markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current.clear();
 
-    // Render User Location Marker
-    if (userLocation) {
+    // Render Active Search Center Pinpoint & Search Range Circle Overlay
+    const activeCenter = userLocation || center;
+
+    if (activeCenter) {
       if (userMarkerRef.current) userMarkerRef.current.setMap(null);
 
-      const userMarkerContent = document.createElement("div");
-      userMarkerContent.className = "relative flex items-center justify-center";
-      userMarkerContent.innerHTML = `
-        <span className="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-blue-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-5 w-5 bg-blue-600 border-2 border-white shadow-lg"></span>
-      `;
+      const titleText = locationLabel ? `📍 Center: ${locationLabel}` : "📍 Search Center Pinpoint";
 
       if (window.google.maps.Marker) {
         userMarkerRef.current = new window.google.maps.Marker({
-          position: userLocation,
+          position: activeCenter,
           map: map,
-          title: "Your Location",
+          title: titleText,
           icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: "#2563eb",
+            path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+            fillColor: "#ea580c", // Vibrant orange pin for search center pinpoint
             fillOpacity: 1,
             strokeColor: "#ffffff",
-            strokeWeight: 2,
+            strokeWeight: 3,
+            scale: 1.7,
+            anchor: new window.google.maps.Point(12, 22),
           },
+        });
+
+        const pinpointInfoWindow = new window.google.maps.InfoWindow({
+          content: `
+            <div style="font-family: sans-serif; padding: 6px 8px; text-align: center; max-width: 200px;">
+              <div style="font-weight: 700; font-size: 13px; color: #ea580c;">📍 ${locationLabel || "Search Center"}</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 3px; background: #fff7ed; padding: 4px 8px; border-radius: 6px; border: 1px solid #ffedd5;">
+                ⭕ Range Circle: <strong>${searchRadiusKm} km</strong>
+              </div>
+            </div>
+          `,
+        });
+
+        userMarkerRef.current.addListener("click", () => {
+          pinpointInfoWindow.open(map, userMarkerRef.current);
         });
       }
 
-      // Draw search radius circle
+      // Draw search radius circle around active center
       if (radiusCircleRef.current) radiusCircleRef.current.setMap(null);
 
-      radiusCircleRef.current = new window.google.maps.Circle({
-        strokeColor: "#2563eb",
-        strokeOpacity: 0.6,
-        strokeWeight: 2,
-        fillColor: "#3b82f6",
-        fillOpacity: 0.08,
+      const circle = new window.google.maps.Circle({
+        strokeColor: "#ea580c",
+        strokeOpacity: 0.9,
+        strokeWeight: 2.5,
+        fillColor: "#f97316",
+        fillOpacity: 0.18,
         map: map,
-        center: userLocation,
+        center: activeCenter,
         radius: searchRadiusKm * 1000, // meters
       });
+
+      radiusCircleRef.current = circle;
     }
 
     // Render Tutor Markers
@@ -315,63 +332,150 @@ export function TutorMapDiscovery({
       {/* Google Map Container */}
       <div ref={mapRef} className="h-full w-full bg-slate-100" />
 
-      {/* Fallback / Loading Overlay */}
+      {/* Fallback / Loading Overlay with Interactive Radar Range Circle */}
       {(!mapLoaded || mapError) && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/90 p-6 text-center backdrop-blur-sm text-white">
-          <div className="max-w-md space-y-4">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 shadow-lg ring-4 ring-brand-400/20">
-              <MapPinIcon className="h-6 w-6 text-white" />
-            </div>
-            <h3 className="text-xl font-bold">Interactive Tutor Map</h3>
-            <p className="text-sm text-slate-300">
-              {mapError
-                ? "Showing localized tutor map preview with interactive pin cards."
-                : "Loading Google Maps API..."}
-            </p>
-
-            {/* Interactive Fallback Map Grid */}
-            <div className="mt-4 rounded-xl bg-slate-800/80 p-4 border border-slate-700 text-left space-y-3 max-h-[340px] overflow-y-auto">
-              <div className="flex items-center justify-between text-xs font-semibold text-brand-300 uppercase tracking-wider">
-                <span>Verified Tutors Near You</span>
-                <span>{tutors.length} Locations</span>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-between bg-slate-950/95 p-4 text-center backdrop-blur-md text-white overflow-hidden">
+          {/* Header Banner */}
+          <div className="w-full max-w-xl flex items-center justify-between bg-slate-900/90 rounded-xl p-3 border border-slate-800 shadow-md">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white font-bold text-sm shadow">
+                📍
               </div>
-              <div className="grid grid-cols-1 gap-2.5">
-                {tutors.map((t) => (
-                  <div
+              <div className="text-left">
+                <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                  <span>Pinpoint: {locationLabel || "Search Center"}</span>
+                  <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-semibold text-orange-400 border border-orange-500/30">
+                    ⭕ Circle: {searchRadiusKm} km Range
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400">Showing {tutors.length} verified tutors within location radius</div>
+              </div>
+            </div>
+            {onUseMyLocation && (
+              <button
+                onClick={onUseMyLocation}
+                className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-500 transition shadow"
+              >
+                📍 GPS Pinpoint
+              </button>
+            )}
+          </div>
+
+          {/* Visual SVG Radar Map & Range Circle Canvas */}
+          <div className="relative my-2 h-[260px] w-full max-w-md flex items-center justify-center">
+            {/* SVG Range Radar Circles */}
+            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 240">
+              {/* Grid Lines */}
+              <line x1="150" y1="20" x2="150" y2="220" stroke="#334155" strokeDasharray="3 3" opacity="0.6" />
+              <line x1="20" y1="120" x2="280" y2="120" stroke="#334155" strokeDasharray="3 3" opacity="0.6" />
+
+              {/* Outer Max Range Circle (50 km scale) */}
+              <circle cx="150" cy="120" r="105" fill="none" stroke="#1e293b" strokeWidth="1.5" />
+              
+              {/* Dynamic Range Circle based on searchRadiusKm */}
+              {(() => {
+                const radiusPx = Math.min(100, Math.max(25, (searchRadiusKm / 50) * 105));
+                return (
+                  <>
+                    {/* Animated Pulsing Fill */}
+                    <circle cx="150" cy="120" r={radiusPx} fill="#f97316" fillOpacity="0.12" className="animate-pulse" />
+                    {/* Circle Stroke */}
+                    <circle cx="150" cy="120" r={radiusPx} fill="none" stroke="#ea580c" strokeWidth="2.5" strokeDasharray="6 3" />
+                    {/* Circle Radius Label Badge */}
+                    <rect x="150" y={120 - radiusPx - 11} width="60" height="18" rx="9" fill="#ea580c" />
+                    <text x="180" y={120 - radiusPx + 2} textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
+                      {searchRadiusKm} km range
+                    </text>
+                  </>
+                );
+              })()}
+
+              {/* Center Pinpoint Marker */}
+              <circle cx="150" cy="120" r="8" fill="#ea580c" stroke="#ffffff" strokeWidth="2.5" className="shadow-lg" />
+              <circle cx="150" cy="120" r="14" fill="#ea580c" fillOpacity="0.3" className="animate-ping" />
+              <text x="150" y="142" textAnchor="middle" fill="#f8fafc" fontSize="10" fontWeight="bold">
+                📍 {locationLabel || "Search Center"}
+              </text>
+
+              {/* Tutor Markers Positioned in SVG Radar */}
+              {tutors.slice(0, 6).map((t, idx) => {
+                const dist = t.distanceKm ?? 5;
+                const angle = (idx * (360 / Math.min(6, tutors.length)) - 45) * (Math.PI / 180);
+                const rScale = Math.min(95, Math.max(20, (dist / 50) * 105));
+                const cx = 150 + rScale * Math.cos(angle);
+                const cy = 120 + rScale * Math.sin(angle);
+                const isSelected = activeTutor?.id === t.id;
+
+                return (
+                  <g
                     key={t.id}
+                    className="cursor-pointer transition-transform hover:scale-125"
                     onClick={() => {
                       setActiveTutor(t);
                       if (onSelectTutor) onSelectTutor(t);
                     }}
-                    className={`cursor-pointer rounded-lg p-3 transition border ${
-                      activeTutor?.id === t.id
-                        ? "border-brand-500 bg-brand-950/40 ring-1 ring-brand-500"
-                        : "border-slate-700 bg-slate-900/60 hover:bg-slate-800"
-                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
-                          {t.name[0]}
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-white">{t.name}</div>
-                          <div className="text-xs text-slate-400">📍 {t.location}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs font-bold text-brand-400">৳{t.hourlyFee}/hr</div>
-                        <div className="text-[10px] text-amber-400">★ {t.rating}</div>
-                      </div>
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={isSelected ? 10 : 7}
+                      fill={isSelected ? "#4f46e5" : "#0284c7"}
+                      stroke="#ffffff"
+                      strokeWidth="2"
+                    />
+                    <text
+                      x={cx}
+                      y={cy - 10}
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      fontSize="9"
+                      fontWeight="bold"
+                    >
+                      {t.name.split(" ")[0]} ({t.distanceKm ?? 0}km)
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          {/* Quick Interactive Tutor Cards Grid */}
+          <div className="w-full max-w-xl rounded-xl bg-slate-900/90 p-3 border border-slate-800 text-left space-y-2 max-h-[160px] overflow-y-auto">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-orange-400 uppercase tracking-wider">
+              <span>Nearby Tutors ({tutors.length})</span>
+              <span>Click pin to view</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {tutors.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => {
+                    setActiveTutor(t);
+                    if (onSelectTutor) onSelectTutor(t);
+                  }}
+                  className={`cursor-pointer rounded-lg p-2 transition border flex items-center justify-between ${
+                    activeTutor?.id === t.id
+                      ? "border-orange-500 bg-orange-950/40 ring-1 ring-orange-500"
+                      : "border-slate-800 bg-slate-900/70 hover:bg-slate-800"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white shrink-0">
+                      {t.name[0]}
                     </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-white truncate">{t.name}</div>
+                      <div className="text-[10px] text-slate-400 truncate">📍 {t.location}</div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs font-bold text-orange-400">৳{t.hourlyFee}/h</div>
                     {t.distanceKm !== undefined && (
-                      <div className="mt-1.5 text-[11px] text-sky-400 font-medium">
-                        🚗 {formatDistance(t.distanceKm)}
-                      </div>
+                      <div className="text-[10px] text-sky-400 font-medium">{formatDistance(t.distanceKm)}</div>
                     )}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
