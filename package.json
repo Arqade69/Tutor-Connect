@@ -1,0 +1,45 @@
+{
+  "name": "tutor-connect-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tutor-Connect — Student Profile & Academic Info Management (Module 1). Next.js + Prisma + PostgreSQL + Google Auth.",
+  "scripts": {
+    "predev": "node scripts/free-port.mjs",
+    "dev": "next dev -p 1511",
+    "build": "next build",
+    "start": "next start -p 1511",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "seed": "tsx prisma/seed.ts",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.17.1",
+    "@prisma/client": "^6.2.0",
+    "bcryptjs": "^3.0.3",
+    "next": "^15.5.23",
+    "next-auth": "5.0.0-beta.25",
+    "nodemailer": "^6.9.16",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/nodemailer": "^6.4.17",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "prisma": "^6.2.0",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
