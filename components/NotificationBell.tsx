@@ -23,8 +23,6 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Read inside the SSE handler below without needing to re-subscribe the
-  // effect every time the dropdown opens/closes.
   const openRef = useRef(open);
   openRef.current = open;
 
@@ -39,11 +37,6 @@ export function NotificationBell() {
     setLoading(false);
   }, []);
 
-  // Live unread-count updates via Server-Sent Events — the server pushes a
-  // message only when the count actually changes, instead of this
-  // component polling on a fixed timer. If the connection drops (e.g. the
-  // server recycles it after a while), the browser's EventSource
-  // reconnects automatically — no extra code needed here for that.
   useEffect(() => {
     const source = new EventSource("/api/notifications/stream");
 
@@ -51,8 +44,6 @@ export function NotificationBell() {
       const data = JSON.parse((event as MessageEvent).data) as { count: number };
       setCount((prev) => {
         if (data.count > prev && openRef.current) {
-          // Something new arrived while the dropdown is already open —
-          // refresh the visible list too, not just the badge.
           loadNotifications();
         }
         return data.count;
@@ -116,10 +107,8 @@ export function NotificationBell() {
 
       {open && (
         <>
-          {/* Backdrop */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
-          {/* Dropdown */}
           <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-xl sm:w-96">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
               <h3 className="text-sm font-semibold text-slate-800">Notifications</h3>

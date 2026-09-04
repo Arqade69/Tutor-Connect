@@ -19,8 +19,8 @@ export default auth((req) => {
   const isLoggedIn = !!session?.user;
   const path = nextUrl.pathname;
 
-  // Never intercept Auth.js' own API routes
-  if (path.startsWith("/api/auth")) return NextResponse.next();
+  // Never intercept Auth.js or payment webhook API routes
+  if (path.startsWith("/api/auth") || path.startsWith("/api/payments")) return NextResponse.next();
 
   const isPublic = PUBLIC_ROUTES.includes(path);
   const isOnboarding = path === "/onboarding";
@@ -46,7 +46,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Run on everything except Auth.js API routes, our session-clear route,
+  // Run on everything except Auth.js API routes, payment webhooks, our session-clear route,
   // static assets, and image optimization.
-  matcher: ["/((?!api/auth|auth/|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|api/payments|auth/|_next/static|_next/image|favicon.ico).*)"],
 };

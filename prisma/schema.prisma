@@ -17,41 +17,42 @@ datasource db {
 
 // USERS - students, parents, and admins
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  image         String?
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String?
+  image            String?
   // hashed password — null for Google-only accounts
-  password      String?
-  emailVerified DateTime?
+  password         String?
+  emailVerified    DateTime?
   // "student" | "parent" | "admin" | "tutor"
-  role          String    @default("student")
+  role             String    @default("student")
   // false until the user finishes the onboarding step (role + profile)
-  onboarded     Boolean   @default(false)
-  phone         String?
-  location      String?
-  district      String?
+  onboarded        Boolean   @default(false)
+  phone            String?
+  location         String?
+  district         String?
   // precise geocoded coordinates for map-based tutor discovery
-  latitude      Float?
-  longitude     Float?
-  isPremium     Boolean   @default(false)
+  latitude         Float?
+  longitude        Float?
+  isPremium        Boolean   @default(false)
+  subscriptionPlan String    @default("free") // "free" | "monthly" | "yearly"
+  premiumExpiresAt DateTime?
   // AI Study Assistant daily usage tracking (free-tier limit)
-  aiDailyCount  Int       @default(0)
-  aiLastReset   DateTime  @default(now())
+  aiDailyCount     Int       @default(0)
+  aiLastReset      DateTime  @default(now())
   // "active" | "suspended"  (managed by admin)
-  status        String    @default("active")
+  status           String    @default("active")
   // policy enforcement — flagged accounts are surfaced to admins for review
-  isFlagged     Boolean   @default(false)
-  flagReason    String?
+  isFlagged        Boolean   @default(false)
+  flagReason       String?
   // loyalty/incentive points earned from completed bookings
-  rewardPoints  Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  rewardPoints     Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  academicInfo    AcademicInfo[]
-  studentProfiles StudentProfile[] @relation("ParentStudents")
-  tutorProfile    TutorProfile?
-
+  academicInfo         AcademicInfo[]
+  studentProfiles      StudentProfile[]      @relation("ParentStudents")
+  tutorProfile         TutorProfile?
   reviews              Review[]
   studentBookings      Booking[]             @relation("StudentBookings")
   conversations1       Conversation[]        @relation("ConvParticipant1")
@@ -60,6 +61,7 @@ model User {
   notifications        Notification[]
   tutorBotMessages     TutorBotMessage[]
   subscriptionPayments SubscriptionPayment[]
+  rewardLogs           RewardLog[]
 
   @@index([role])
 }
@@ -156,8 +158,6 @@ model AvailabilitySlot {
 // =====================================================================
 
 // REVIEWS - student/parent reviews and ratings for tutors
-// Tied 1:1 to the completed Booking it was left for — this is what lets us
-// enforce "only after a completed session" and "one review per session".
 model Review {
   id        String   @id @default(cuid())
   tutorId   String
@@ -191,10 +191,6 @@ model Booking {
   status      String   @default("pending")
 
   // --- Tutor-initiated reschedule proposal ---
-  // "none" | "pending"  — once the student accepts or declines (or the
-  // tutor withdraws it), the proposal fields are cleared and this resets
-  // to "none". Accepted proposals are applied directly to
-  // date/dayOfWeek/startTime/endTime.
   rescheduleStatus  String   @default("none")
   proposedDate      String?  // YYYY-MM-DD
   proposedDayOfWeek String?
@@ -203,10 +199,6 @@ model Booking {
   rescheduleNote    String?  // optional message from the tutor explaining the change
 
   // --- Session reminder tracking ---
-  // Stores the YYYY-MM-DD of the occurrence each reminder was already sent
-  // for (not just a boolean) so recurring "monthly" bookings correctly get
-  // fresh reminders for each week's session, while one-time bookings still
-  // only ever fire once (they only ever have one occurrence).
   reminder24SentForDate String?
   reminder1SentForDate  String?
 
@@ -215,7 +207,6 @@ model Booking {
 
   student User         @relation("StudentBookings", fields: [studentId], references: [id], onDelete: Cascade)
   tutor   TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
-  // present once the student/parent has left feedback for this completed session
   review  Review?
 
   @@index([studentId])
@@ -296,12 +287,46 @@ model TutorBotMessage {
 }
 
 // =====================================================================
-//  Module: Admin System Settings & Revenue Analytics
-//  Models: SystemSetting, SubscriptionPayment
+//  Module: Subscription & Payment System (UddoktaPay Gateway)
+//  Model: SubscriptionPayment
+// =====================================================================
+
+model SubscriptionPayment {
+  id            String    @id @default(cuid())
+  userId        String
+  planType      String    @default("monthly") // "monthly" | "yearly"
+  amount        Int       // 150 or 1500
+  referenceCode String?   @unique // e.g. "UP-892140"
+  invoiceId     String?   @unique // UddoktaPay invoice_id e.g. "UP170281"
+  transactionId String?   @unique // bKash/Nagad TrxID
+  paymentMethod String?   // "bkash" | "nagad" | "rocket" | "card"
+  status        String    @default("pending") // "pending" | "verified" | "completed" | "failed"
+  redeemedPoints Int      @default(0)          // reward points redeemed for discount
+  discountAmount Int      @default(0)          // Taka discount applied from points
+  rawPayload    String?   // JSON response from UddoktaPay
+  verifiedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([referenceCode])
+  @@index([invoiceId])
+  @@index([transactionId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// =====================================================================
+//  Module: Reward Points System & Admin System Settings
+//  Models: SystemSetting, RewardLog
 // =====================================================================
 
 model SystemSetting {
   id                     String   @id @default("default")
+  key                    String?  @unique // e.g. "points_per_taka", "points_booking"
+  value                  String?  // e.g. "20"
   rewardPointRate        Float    @default(1.0)  // BDT conversion per point
   rewardPointsPerBooking Int      @default(10)   // Points earned per booking
   premiumMonthlyPrice    Int      @default(499)  // BDT per month
@@ -310,16 +335,17 @@ model SystemSetting {
   updatedAt              DateTime @updatedAt
 }
 
-model SubscriptionPayment {
-  id        String   @id @default(cuid())
-  userId    String
-  amount    Int
-  planType  String   @default("monthly") // "monthly" | "annual"
-  status    String   @default("completed") // "completed" | "refunded"
-  createdAt DateTime @default(now())
+// REWARD_LOGS - tracks each point earning and redemption event
+model RewardLog {
+  id          String   @id @default(cuid())
+  userId      String
+  points      Int      // Positive = earned, Negative = redeemed
+  action      String   // "booking_created" | "session_completed" | "subscription_renewed" | "review_written" | "discount_redeemed"
+  description String
+  createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([createdAt])
+  @@index([action])
 }

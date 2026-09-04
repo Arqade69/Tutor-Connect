@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser, dashboardFor } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/ProfileForm";
@@ -44,38 +45,65 @@ export default async function StudentDashboard() {
         <AcademicInfoList items={academicInfo} />
       </section>
 
-      {/* Cross-module quick links (other modules — placeholders) */}
+      {/* Cross-module quick links */}
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
           More on Tutor-Connect
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <ComingSoonCard title="AI Assistant (TutorBot)" desc="Premium 24/7 study help." premium />
+          <Link
+            href="/dashboard/tutorbot"
+            className="card group relative p-5 transition hover:border-brand-300 hover:shadow-md"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-semibold text-slate-800 group-hover:text-brand-600">
+                TutorBot AI
+              </span>
+              <span className="badge bg-purple-50 text-purple-700">Active</span>
+            </div>
+            <p className="text-sm text-slate-500">
+              24/7 study help for SSC, HSC, O/A-Level & Admission prep.
+            </p>
+            <span className="badge mt-3 inline-block bg-amber-50 text-amber-700">
+              {user.isPremium ? "Unlimited Premium" : "Free (5/day)"}
+            </span>
+          </Link>
+
+          <Link
+            href="/dashboard/subscription"
+            className="card group relative p-5 transition hover:border-brand-300 hover:shadow-md bg-gradient-to-br from-white via-slate-50 to-brand-50/30"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-semibold text-slate-800 group-hover:text-brand-600 flex items-center gap-1.5">
+                <span>Subscription & Plans</span>
+                <span>👑</span>
+              </span>
+              <span className="badge bg-brand-50 text-brand-700">UddoktaPay</span>
+            </div>
+            <p className="text-sm text-slate-500">
+              Upgrade to Premium via UddoktaPay & redeem reward points for discounts.
+            </p>
+            <span className="badge mt-3 inline-block bg-brand-600 text-white font-medium">
+              {user.isPremium ? "Manage Plan" : "Upgrade Now"}
+            </span>
+          </Link>
+
+          <Link
+            href="/dashboard/tutors"
+            className="card group relative p-5 transition hover:border-brand-300 hover:shadow-md"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-semibold text-slate-800 group-hover:text-brand-600">
+                Find a Tutor
+              </span>
+              <span className="badge bg-blue-50 text-blue-700">Search</span>
+            </div>
+            <p className="text-sm text-slate-500">
+              Browse tutors by subject, class level, district & geolocation map.
+            </p>
+          </Link>
         </div>
       </section>
-    </div>
-  );
-}
-
-function ComingSoonCard({
-  title,
-  desc,
-  premium,
-}: {
-  title: string;
-  desc: string;
-  premium?: boolean;
-}) {
-  return (
-    <div className="card relative p-5 opacity-80">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-medium text-slate-700">{title}</span>
-        <span className="badge bg-slate-100 text-slate-500">Coming soon</span>
-      </div>
-      <p className="text-sm text-slate-500">{desc}</p>
-      {premium && (
-        <span className="badge mt-3 bg-amber-50 text-amber-700">Premium feature</span>
-      )}
     </div>
   );
 }

@@ -342,7 +342,7 @@ export function TutorAnalyticsDashboard({
 
       {/* Main Charts Section */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Sessions & Earnings Interactive Chart (2 Columns) */}
+        {/* Sessions & Earnings Interactive Chart */}
         <div className="card p-6 lg:col-span-2">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -369,9 +369,7 @@ export function TutorAnalyticsDashboard({
             </div>
           ) : (
             <div className="mt-6">
-              {/* SVG / Bar Chart Representation */}
               <div className="relative h-64 w-full border-b border-slate-200">
-                {/* Horizontal grid lines */}
                 <div className="absolute inset-0 flex flex-col justify-between opacity-30">
                   <div className="w-full border-b border-dashed border-slate-300" />
                   <div className="w-full border-b border-dashed border-slate-300" />
@@ -379,12 +377,10 @@ export function TutorAnalyticsDashboard({
                   <div className="w-full border-b border-dashed border-slate-300" />
                 </div>
 
-                {/* Bars Container */}
                 <div className="absolute inset-0 flex items-end justify-around px-2 pt-6">
                   {displayChartData.map((item, idx) => {
                     const sessionHeight = Math.max((item.sessions / maxSessions) * 85, 8);
                     const earningsHeight = Math.max((item.earnings / maxEarnings) * 85, 8);
-
                     const isHovered = hoveredBarIndex === idx;
 
                     return (
@@ -394,7 +390,6 @@ export function TutorAnalyticsDashboard({
                         onMouseLeave={() => setHoveredBarIndex(null)}
                         className="group relative flex h-full flex-1 cursor-pointer items-end justify-center gap-1 px-1"
                       >
-                        {/* Tooltip on hover */}
                         {isHovered && (
                           <div className="absolute -top-14 z-20 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white shadow-lg">
                             <p className="font-bold">{item.label}</p>
@@ -403,12 +398,10 @@ export function TutorAnalyticsDashboard({
                           </div>
                         )}
 
-                        {/* Session Bar */}
                         <div
                           style={{ height: `${sessionHeight}%` }}
                           className="w-full max-w-[20px] rounded-t bg-brand-600 transition-all duration-300 group-hover:bg-brand-500"
                         />
-                        {/* Earnings Bar */}
                         <div
                           style={{ height: `${earningsHeight}%` }}
                           className="w-full max-w-[20px] rounded-t bg-emerald-500 transition-all duration-300 group-hover:bg-emerald-400"
@@ -419,7 +412,6 @@ export function TutorAnalyticsDashboard({
                 </div>
               </div>
 
-              {/* X-Axis Labels */}
               <div className="mt-2 flex justify-around px-2 text-center text-[11px] font-medium text-slate-500">
                 {displayChartData.map((item) => (
                   <div key={item.key} className="flex-1 truncate px-0.5">
@@ -431,7 +423,7 @@ export function TutorAnalyticsDashboard({
           )}
         </div>
 
-        {/* Rating Trend & Distribution (1 Column) */}
+        {/* Rating Trend & Distribution */}
         <div className="card p-6">
           <h2 className="text-base font-bold text-slate-900">Average Rating Trends</h2>
           <p className="text-xs text-slate-500">Derived from stars / total reviews</p>
@@ -451,7 +443,6 @@ export function TutorAnalyticsDashboard({
             </div>
           </div>
 
-          {/* Rating Trend Timeline */}
           <div className="mt-6 space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
               Historical Progression
@@ -480,7 +471,7 @@ export function TutorAnalyticsDashboard({
         </div>
       </div>
 
-      {/* Student Reviews — anonymous: rating + comment only, no reviewer identity */}
+      {/* Student Reviews */}
       <div className="card p-6">
         <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -526,7 +517,6 @@ export function TutorAnalyticsDashboard({
 
       {/* Peak Demand Period Breakdown */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Day of Week Demand */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -562,7 +552,6 @@ export function TutorAnalyticsDashboard({
           </div>
         </div>
 
-        {/* Popular Time Slots */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <div>

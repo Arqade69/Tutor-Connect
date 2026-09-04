@@ -382,4 +382,3 @@ function ActionIcon({ kind, active }: { kind: "crown" | "lock" | "trash" | "swap
     </svg>
   );
 }
-

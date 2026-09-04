@@ -21,6 +21,7 @@ const STUDENT_SYSTEM_PROMPT = `You are TutorBot, a friendly and encouraging AI s
 - Be patient, warm, and supportive — like a great tutor would be.
 
 ## Response Guidelines
+- Address ONLY the user's latest question. Do NOT repeat, summarize, re-answer, or combine responses for previous questions from the chat history.
 - Use structured formatting: numbered steps, bullet points, and clear headings.
 - For math/science problems, show each step of the solution process.
 - Keep language simple and accessible for secondary and higher-secondary students.
@@ -52,6 +53,7 @@ const TUTOR_SYSTEM_PROMPT = `You are TutorBot AI, an intelligent AI Teaching Ass
 - Be professional, creative, efficient, and academically rigorous — acting as a peer-level teaching assistant for professional tutors.
 
 ## Response Guidelines
+- Address ONLY the user's latest question or instruction. Do NOT repeat, summarize, re-answer, or combine responses for previous questions from the chat history. Produce ONE focused response for the current question only.
 - Use structured formatting: clear headers, bullet points, numbered lists, tables, and code blocks for formulas/code.
 - Provide step-by-step solution guides, marking schemes, and explanations tailored for teaching.
 - Address the user as an educator/tutor.
@@ -74,7 +76,6 @@ function generateEducationalFallback(text: string, role: string): string {
   const query = text.toLowerCase();
   const rawText = text.trim();
 
-  // Helper to extract a topic snippet or subject from the prompt
   const topicMatch = rawText.match(/(?:about|on|for|explain|how to|what is|create|generate|help with)\s+([^?.!]+)/i);
   const topicName = topicMatch ? topicMatch[1].trim() : rawText;
 
@@ -154,45 +155,6 @@ Here is a 5-question multiple choice & conceptual assessment for your SSC tutori
    *Explanation:* Mild, non-corrosive insoluble bases like Magnesium Hydroxide (Milk of Magnesia) are safe for consumption.`;
     }
 
-    if (query.includes("engagement") || query.includes("online") || query.includes("technique")) {
-      return `### 🎯 5 Interactive Techniques for 1-on-1 Online Tutoring
-
-1. **The "Reverse Teacher" Method:**
-   - After explaining a concept, ask the student to teach it back to you using the digital whiteboard. This instantly reveals misconceptions.
-
-2. **Micro-Quizzing (Every 10-15 Mins):**
-   - Never lecture for more than 10 minutes uninterrupted. Insert a 1-minute quick diagnostic question or rapid-fire poll.
-
-3. **Interactive Problem Solving on Shared Canvas:**
-   - Color code your steps: Tutor writes in blue, student completes the algebra step in green.
-
-4. **Real-Life Bangladeshi Context Hooks:**
-   - Relate physics/math examples to Padma Bridge load capacity, cricket trajectories (Mirpur stadium), or solar panels in rural areas.
-
-5. **Positive Reinforcement & Error Analysis:**
-   - Celebrate correct reasoning even if arithmetic has a minor error. Maintain an "Error Log" document that the student reviews before exams.`;
-    }
-
-    if (query.includes("worksheet") || query.includes("practice") || query.includes("problem")) {
-      return `### 📑 Custom Educator Practice Worksheet: ${topicName}
-
-Here is a structured 3-part practice module designed for your students:
-
-#### Part A: Fundamental Concept Check
-1. Define the core principles of **${topicName}** and state the relevant formulas or definitions.
-2. What are the common misconceptions students face when solving questions on this topic?
-
-#### Part B: Creative Application Questions (CQ)
-- **Question 1:** Explain how the principles of **${topicName}** apply in real-world scenarios or standard board exam problems.
-- **Question 2:** Work through a multi-step problem, showing clear steps and final unit verification.
-
-#### Part C: Solution & Marking Scheme
-- **Step 1:** Award 1 mark for correct identification of given data and formula selection.
-- **Step 2:** Award 2 marks for algebraic substitution and correct intermediate calculation.
-- **Step 3:** Award 1 mark for the final answer with correct units.`;
-    }
-
-    // Dynamic Fallback for any other prompt asked by a Tutor
     return `### 🎓 TutorBot Educator Assistant: Guidance on "${rawText.slice(0, 60)}${rawText.length > 60 ? "..." : ""}"
 
 Here is an educational outline and pedagogical strategy for your request:
@@ -237,49 +199,6 @@ Newton's laws form the foundation of classical mechanics:
 Would you like to practice a numerical problem on Newton's laws or momentum conservation?`;
   }
 
-  if (query.includes("trigonometry") || query.includes("sin") || query.includes("math")) {
-    return `### 📐 Basic Trigonometric Ratios (SSC & O-Level Math)
-
-In a right-angled triangle with acute angle **θ**:
-- **Hypotenuse (H):** The longest side opposite to the 90° right angle.
-- **Perpendicular / Opposite (P):** The side opposite to angle θ.
-- **Base / Adjacent (B):** The side adjacent to angle θ.
-
-#### Core Trigonometric Formulas
-1. **sin(θ) = Perpendicular / Hypotenuse = P / H**
-2. **cos(θ) = Base / Hypotenuse = B / H**
-3. **tan(θ) = Perpendicular / Base = P / B = sin(θ) / cos(θ)**
-
-#### Reciprocal Ratios
-- **csc(θ) = 1 / sin(θ) = H / P**
-- **sec(θ) = 1 / cos(θ) = H / B**
-- **cot(θ) = 1 / tan(θ) = B / P**
-
-#### Fundamental Pythagorean Identities
-- **sin²(θ) + cos²(θ) = 1**
-- **1 + tan²(θ) = sec²(θ)**
-- **1 + cot²(θ) = csc²(θ)**`;
-  }
-
-  if (query.includes("biology") || query.includes("mitosis") || query.includes("meiosis")) {
-    return `### 🧬 Mitosis vs Meiosis (O-Level & HSC Biology)
-
-Here is a quick summary of cell division:
-
-| Feature | Mitosis | Meiosis |
-| :--- | :--- | :--- |
-| **Location** | Somatic (body) cells | Germ (reproductive) cells |
-| **Divisions** | 1 nuclear division | 2 successive divisions |
-| **Daughter Cells** | 2 identical diploid (2n) cells | 4 genetically diverse haploid (n) cells |
-| **Chromosome Count** | Remains unchanged (2n → 2n) | Halved (2n → n) |
-| **Purpose** | Growth, tissue repair, asexual reproduction | Gamete formation (sperm & egg) |
-| **Crossing Over** | Does not occur | Occurs during Prophase I |
-
-[SUGGEST_TUTOR]
-Need more in-depth practice with diagrams and past paper questions? A specialized Biology tutor can help you master cell biology!`;
-  }
-
-  // Dynamic Fallback for any other prompt asked by a Student
   return `### 💡 TutorBot Study Assistant: "${rawText.slice(0, 60)}${rawText.length > 60 ? "..." : ""}"
 
 Here is a breakdown to help you with **${topicName}**:
@@ -301,8 +220,17 @@ If you find this topic challenging or want personalized 1-on-1 guidance, you can
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Google AI Studio / Gemini API keys typically start with "AIza" or "AQ."
-// and contain URL-safe characters with no whitespace.
+function getGeminiApiKey(): string {
+  const envKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GEMINI_APIKEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY;
+
+  if (envKey) return envKey.trim();
+  return "";
+}
+
 function isValidGeminiKeyFormat(key: string): boolean {
   const trimmed = key.trim();
   return trimmed.length >= 15 && !/\s/.test(trimmed);
@@ -339,8 +267,6 @@ export type SendResult = {
 
 /**
  * Send a message to TutorBot and get an AI-generated response.
- * Uses Google GenAI with gemini-2.5-flash and provides robust fallback.
- * Enforces free-tier daily usage limits.
  */
 export async function sendTutorBotMessage(
   messageText: string
@@ -364,7 +290,6 @@ export async function sendTutorBotMessage(
     const lastReset = user.aiLastReset;
 
     if (!user.isPremium) {
-      // Reset counter if it's a new day
       if (!isSameDay(now, lastReset)) {
         await prisma.user.update({
           where: { id: user.id },
@@ -383,7 +308,7 @@ export async function sendTutorBotMessage(
       }
     }
 
-    // ---- Fetch recent conversation history for multi-turn context -------
+    // ---- Fetch recent conversation history --------------------------------
     const pastMessages = await prisma.tutorBotMessage.findMany({
       where: { userId: user.id, role: { in: ["user", "assistant"] } },
       orderBy: { createdAt: "desc" },
@@ -391,28 +316,15 @@ export async function sendTutorBotMessage(
     });
     pastMessages.reverse();
 
-    // ---- Generate AI Response (Live Gemini or Educational Fallback) -------
-    const apiKey =
-      process.env.GEMINI_API_KEY ||
-      process.env.GEMINI_APIKEY ||
-      process.env.GOOGLE_API_KEY ||
-      process.env.GOOGLE_GENAI_API_KEY;
+    // ---- Generate AI Response ---------------------------------------------
+    const apiKey = getGeminiApiKey();
     let aiText = "";
 
     if (!apiKey) {
-      console.warn(
-        "[TutorBot] No Gemini API key found in env (GEMINI_API_KEY / GEMINI_APIKEY / GOOGLE_API_KEY / GOOGLE_GENAI_API_KEY). Using offline fallback."
-      );
+      console.warn("[TutorBot] No Gemini API key found in env. Using offline fallback.");
     } else if (!isValidGeminiKeyFormat(apiKey)) {
-      // A key is present but doesn't match Google AI Studio's format, so a live
-      // API call would just fail auth on every request. Skip the network round
-      // trip entirely and fail fast with an actionable log instead of a vague
-      // error from the SDK.
       console.warn(
-        `[TutorBot] GEMINI key is set but doesn't look like a valid Gemini API key ` +
-          `(expected a valid non-empty API key string). Got a value starting with "${apiKey.slice(0, 6)}...". ` +
-          `Get a key from https://aistudio.google.com/apikey and set it as GEMINI_API_KEY in .env. ` +
-          `Using offline fallback for now.`
+        `[TutorBot] GEMINI key is set but doesn't look like a valid Gemini API key. Using offline fallback.`
       );
     } else {
       try {
@@ -420,11 +332,29 @@ export async function sendTutorBotMessage(
         const systemPrompt =
           user.role === "tutor" ? TUTOR_SYSTEM_PROMPT : STUDENT_SYSTEM_PROMPT;
 
+        const historyContents: { role: string; parts: { text: string }[] }[] = [];
+        for (const m of pastMessages) {
+          const role = m.role === "assistant" ? "model" : "user";
+          const lastRole =
+            historyContents.length > 0
+              ? historyContents[historyContents.length - 1].role
+              : null;
+          if (role !== lastRole) {
+            historyContents.push({ role, parts: [{ text: m.text }] });
+          }
+        }
+        if (historyContents.length > 0 && historyContents[0].role !== "user") {
+          historyContents.shift();
+        }
+        if (
+          historyContents.length > 0 &&
+          historyContents[historyContents.length - 1].role !== "model"
+        ) {
+          historyContents.pop();
+        }
+
         const contents = [
-          ...pastMessages.map((m) => ({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: m.text }],
-          })),
+          ...historyContents,
           {
             role: "user",
             parts: [{ text }],
@@ -440,8 +370,15 @@ export async function sendTutorBotMessage(
         });
 
         aiText = response.text?.trim() ?? "";
-      } catch (geminiError) {
-        console.warn("[TutorBot] Gemini API call failed, using fallback:", geminiError);
+      } catch (geminiError: any) {
+        console.warn(`[TutorBot] Gemini API call failed for model ${GEMINI_MODEL}:`, geminiError?.message || geminiError);
+        const errMsg = String(geminiError?.message || geminiError);
+        if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+          return {
+            ok: false,
+            error: "Gemini AI daily API quota limit reached. Please try again later or check your API key quota.",
+          };
+        }
       }
     }
 
@@ -449,12 +386,10 @@ export async function sendTutorBotMessage(
       aiText = generateEducationalFallback(text, user.role);
     }
 
-    // ---- Detect tutor suggestion marker ---------------------------------
     const suggestTutor =
       user.role === "tutor" ? false : aiText.includes("[SUGGEST_TUTOR]");
     const cleanedText = aiText.replace(/\[SUGGEST_TUTOR\]/g, "").trim();
 
-    // ---- Persist messages -----------------------------------------------
     const txOps = [
       prisma.tutorBotMessage.create({
         data: { userId: user.id, role: "user", text },
@@ -469,7 +404,6 @@ export async function sendTutorBotMessage(
       }),
     ];
 
-    // Increment daily count for free users
     if (!user.isPremium) {
       txOps.push(
         prisma.user.update({
@@ -514,10 +448,6 @@ export async function sendTutorBotMessage(
   }
 }
 
-
-/**
- * Retrieve chat history for the current user (last 50 messages).
- */
 export async function getTutorBotHistory(): Promise<{
   messages: TutorBotMessageData[];
   remaining: number;
@@ -532,7 +462,7 @@ export async function getTutorBotHistory(): Promise<{
   const messages = await prisma.tutorBotMessage.findMany({
     where: {
       userId: user.id,
-      role: { in: ["user", "assistant"] }, // Exclude system_interaction_id records
+      role: { in: ["user", "assistant"] },
     },
     orderBy: { createdAt: "asc" },
     take: 50,
@@ -545,7 +475,6 @@ export async function getTutorBotHistory(): Promise<{
     },
   });
 
-  // Calculate remaining daily messages
   const now = new Date();
   let dailyCount = user.aiDailyCount;
   if (!isSameDay(now, user.aiLastReset)) {
@@ -564,9 +493,6 @@ export async function getTutorBotHistory(): Promise<{
   };
 }
 
-/**
- * Clear all TutorBot chat history for the current user.
- */
 export async function clearTutorBotHistory(): Promise<{ ok: boolean; error?: string }> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "Please sign in." };

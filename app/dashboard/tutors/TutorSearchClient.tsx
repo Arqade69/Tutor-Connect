@@ -138,7 +138,6 @@ export function TutorSearchClient({
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      // Check if search query corresponds to a specific area/locality
       const geocoded = await geocodeAddress(query);
       if (geocoded) {
         setUserLocation(geocoded.coords);
@@ -431,7 +430,7 @@ export function TutorSearchClient({
             </select>
           </div>
 
-          {/* Search Range Radius Circle Control (Always Visible) */}
+          {/* Search Range Radius Circle Control */}
           <div className="space-y-2 rounded-xl bg-orange-50 p-3.5 border border-orange-200 shadow-sm">
             <div className="flex justify-between text-xs font-semibold text-slate-700">
               <span className="uppercase tracking-wider text-orange-950 font-extrabold flex items-center gap-1">

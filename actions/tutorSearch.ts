@@ -113,7 +113,6 @@ export async function searchTutors(filters: TutorFilterInput = {}) {
         ? Number((t.reviews.reduce((acc, r) => acc + r.rating, 0) / t.reviews.length).toFixed(1))
         : 5.0;
 
-    // Resolve lat & lng
     const coords =
       t.user.latitude && t.user.longitude
         ? { lat: t.user.latitude, lng: t.user.longitude }
@@ -149,19 +148,16 @@ export async function searchTutors(filters: TutorFilterInput = {}) {
     };
   });
 
-  // Filter by min rating if specified
   if (minRating !== undefined && minRating > 0) {
     mappedTutors = mappedTutors.filter((t) => t.rating >= minRating);
   }
 
-  // Filter by radius if maxDistanceKm and user location are set
   if (userLat !== undefined && userLng !== undefined && maxDistanceKm !== undefined && maxDistanceKm > 0) {
     mappedTutors = mappedTutors.filter(
       (t) => t.distanceKm !== undefined && t.distanceKm <= maxDistanceKm
     );
   }
 
-  // Apply sorting
   if (sortBy === "distance" && userLat !== undefined && userLng !== undefined) {
     mappedTutors.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
   } else if (sortBy === "rating") {

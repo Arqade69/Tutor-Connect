@@ -196,7 +196,6 @@ function LinkStudentForm({ onDone }: { onDone: () => void }) {
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [state, formAction, pending] = useActionForm(linkExistingStudent);
 
-  // Debounced search
   useEffect(() => {
     if (query.trim().length < 2) {
       setResults([]);
@@ -223,7 +222,7 @@ function LinkStudentForm({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-500">
-        Search for an existing user by name or email to link them as a student under your account.
+        Search for a registered student by name or email to link them under your account.
         They will receive an in-app notification.
       </p>
 
@@ -252,7 +251,6 @@ function LinkStudentForm({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      {/* Search results */}
       {searching && (
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -293,7 +291,6 @@ function LinkStudentForm({ onDone }: { onDone: () => void }) {
         <p className="text-sm text-slate-400">No users found matching &quot;{query}&quot;.</p>
       )}
 
-      {/* Selected user confirmation */}
       {selected && (
         <div className="rounded-xl border-2 border-brand-200 bg-brand-50/50 p-4">
           <div className="flex items-center gap-3">

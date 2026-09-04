@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { SignOutButton } from "@/components/SignOutButton";
 import {
@@ -21,11 +20,10 @@ import {
   RobotIcon,
   SettingsIcon,
   ShieldIcon,
+  CrownIcon,
+  GiftIcon,
 } from "@/components/icons";
-import { useSearchParams } from "next/navigation";
 
-// Icons are referenced by name so the (server) layout can pass plain serializable
-// data across the RSC boundary instead of serialized JSX elements.
 const ICONS = {
   dashboard: DashboardIcon,
   user: UserIcon,
@@ -39,13 +37,15 @@ const ICONS = {
   robot: RobotIcon,
   settings: SettingsIcon,
   shield: ShieldIcon,
+  crown: CrownIcon,
+  gift: GiftIcon,
 } as const;
 
 export type IconName = keyof typeof ICONS;
 
 export type NavItem = {
   label: string;
-  href?: string; // omit / set `soon` for not-yet-built modules
+  href?: string;
   icon?: IconName;
   soon?: boolean;
 };
@@ -56,6 +56,7 @@ const roleBadge: Record<string, string> = {
   student: "bg-brand-400/20 text-brand-200",
   parent: "bg-emerald-400/20 text-emerald-200",
   admin: "bg-amber-400/20 text-amber-200",
+  tutor: "bg-purple-400/20 text-purple-200",
 };
 
 function Avatar({
@@ -112,7 +113,6 @@ export function Sidebar({
   const [open, setOpen] = useState(false);
   const fallback = name ?? email;
 
-  // Only a real route (no "#") can be "active"; handles query parameters like ?tab=...
   const isActive = (href?: string) => {
     if (!href || href.includes("#")) return false;
     const [path, query] = href.split("?");
@@ -134,7 +134,7 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile top bar — hamburger + wordmark + avatar */}
+      {/* Mobile top bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <button
           type="button"

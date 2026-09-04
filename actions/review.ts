@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import { awardRewardPoints } from "./rewards";
 
 // A student/parent can only review a tutor once per completed session — the
 // review is created against a specific Booking, not just the tutor, so the
@@ -17,7 +18,7 @@ export async function createReview(bookingId: string, rating: number, comment: s
   }
 
   // Snap to the nearest half-star (e.g. 4.3 -> 4.5, 4.2 -> 4.0) so the
-  // stored rating always matches what the half-star UI can actually produce.
+  // stored rating always matches what the half-star UI can produce.
   const ratingValue = Math.round(rating * 2) / 2;
   if (!ratingValue || ratingValue < 0.5 || ratingValue > 5) {
     return { error: "Please select a rating between half a star and 5 stars." };
@@ -57,15 +58,19 @@ export async function createReview(bookingId: string, rating: number, comment: s
       },
     });
 
-    // Recompute everywhere the average rating is shown, so it reflects the
-    // new submission immediately on next load.
     revalidatePath(`/dashboard/tutors/${booking.tutorId}`);
     revalidatePath("/dashboard/tutors");
     revalidatePath("/dashboard/bookings");
 
+    // Award reward points for writing a review
+    await awardRewardPoints(
+      currentUser.id,
+      "review_written",
+      `Wrote a ${ratingValue}-star review`
+    );
+
     return { success: true, reviewId: review.id };
   } catch (err: any) {
-    // Unique constraint on bookingId — guards against a double-submit race.
     if (err?.code === "P2002") {
       return { error: "You've already left a review for this session." };
     }
@@ -74,7 +79,6 @@ export async function createReview(bookingId: string, rating: number, comment: s
 }
 
 // Completed sessions this user had with a tutor that don't have a review yet
-// — used to power the "Leave a Review" prompt on that tutor's profile.
 export async function getReviewableBookings(tutorId: string) {
   const currentUser = await getCurrentUser();
   if (!currentUser || currentUser.role === "tutor") return [];

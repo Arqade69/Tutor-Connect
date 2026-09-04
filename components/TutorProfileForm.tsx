@@ -313,11 +313,9 @@ export function TutorProfileForm({
             </div>
           </div>
 
-          {/* Hidden inputs to pass coordinates silently without raw textboxes */}
           <input type="hidden" name="latitude" value={latitude} />
           <input type="hidden" name="longitude" value={longitude} />
 
-          {/* Interactive Google Maps Pinpointer */}
           <div className="space-y-2 pt-2 border-t border-slate-200/60">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-700 flex items-center gap-1">

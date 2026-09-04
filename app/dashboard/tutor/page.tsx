@@ -29,7 +29,6 @@ export default async function TutorDashboard() {
   const profile = await prisma.tutorProfile.findUnique({
     where: { userId: user.id },
     include: {
-      user: true,
       availabilitySlots: { orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] },
     },
   });
@@ -73,6 +72,7 @@ export default async function TutorDashboard() {
               Track total earnings, completed sessions, average ratings & peak demand.
             </p>
           </Link>
+
           <Link
             href="/dashboard/bookings"
             className="card group relative p-5 transition hover:border-brand-300 hover:shadow-md"
@@ -85,32 +85,23 @@ export default async function TutorDashboard() {
             </div>
             <p className="text-sm text-slate-500">See upcoming and completed session reservations.</p>
           </Link>
-          <ComingSoonCard title="TutorBot AI" desc="Premium 24/7 study help for your students." premium />
+
+          <Link
+            href="/dashboard/tutorbot"
+            className="card group relative p-5 transition hover:border-brand-300 hover:shadow-md"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-semibold text-slate-800 group-hover:text-brand-600">
+                TutorBot AI
+              </span>
+              <span className="badge bg-purple-50 text-purple-700">Active</span>
+            </div>
+            <p className="text-sm text-slate-500">
+              AI Teaching Assistant for lesson planning, quiz generation & study help.
+            </p>
+          </Link>
         </div>
       </section>
-    </div>
-  );
-}
-
-function ComingSoonCard({
-  title,
-  desc,
-  premium,
-}: {
-  title: string;
-  desc: string;
-  premium?: boolean;
-}) {
-  return (
-    <div className="card relative p-5 opacity-80">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-medium text-slate-700">{title}</span>
-        <span className="badge bg-slate-100 text-slate-500">Coming soon</span>
-      </div>
-      <p className="text-sm text-slate-500">{desc}</p>
-      {premium && (
-        <span className="badge mt-3 bg-amber-50 text-amber-700">Premium feature</span>
-      )}
     </div>
   );
 }

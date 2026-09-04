@@ -276,9 +276,8 @@ export function BookingsClient({
         )}
       </div>
 
-      {/* Filter Toolbar: Status + Session Type */}
+      {/* Filter Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-3">
-        {/* Status Tabs */}
         <div className="flex border-b sm:border-b-0 border-slate-200 text-xs font-semibold text-slate-600 gap-1 overflow-x-auto">
           {["All", "Pending", "Confirmed", "Completed", "Cancelled"].map((tab) => (
             <button
@@ -295,7 +294,6 @@ export function BookingsClient({
           ))}
         </div>
 
-        {/* Session Type Filter */}
         <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
           <span>Filter Session Type:</span>
           <select
@@ -346,7 +344,6 @@ export function BookingsClient({
                     : "border-slate-200/80 bg-white"
                 }`}
               >
-                {/* Left Section: Partner Info & Subject */}
                 <div className="flex items-start gap-4">
                   {partnerUser?.image ? (
                     <img
@@ -394,7 +391,6 @@ export function BookingsClient({
                       </p>
                     )}
 
-                    {/* Reschedule proposal banner */}
                     {booking.rescheduleStatus === "pending" && (
                       <div className="mt-2 rounded-lg border border-violet-300 bg-violet-50 p-3">
                         <p className="text-xs font-bold text-violet-800">
@@ -441,12 +437,10 @@ export function BookingsClient({
                   </div>
                 </div>
 
-                {/* Right Section: Status & Tutor Approval Action */}
                 <div className="flex flex-col items-start gap-3 border-t border-slate-200/60 pt-3 md:items-end md:border-t-0 md:pt-0">
                   <div>{getStatusBadge(booking.status)}</div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {/* Chat button */}
                     {partnerUser?.id && (
                       <button
                         onClick={() => handleOpenChat(partnerUser.id)}
@@ -457,7 +451,6 @@ export function BookingsClient({
                       </button>
                     )}
 
-                    {/* Prominent Tutor Approval Button */}
                     {userRole === "tutor" && booking.status === "pending" && (
                       <button
                         onClick={() => handleStatusUpdate(booking.id, "confirmed")}
@@ -468,8 +461,6 @@ export function BookingsClient({
                       </button>
                     )}
 
-                    {/* Propose a new time — tutor only, while the session is
-                        still active and there isn't already a pending proposal */}
                     {userRole === "tutor" &&
                       (booking.status === "pending" || booking.status === "confirmed") &&
                       booking.rescheduleStatus !== "pending" && (
@@ -482,8 +473,6 @@ export function BookingsClient({
                         </button>
                       )}
 
-                    {/* Mark Completed action — tutor only; this is what unlocks
-                        the student/parent's ability to leave a review */}
                     {userRole === "tutor" && booking.status === "confirmed" && (
                       <button
                         onClick={() => handleStatusUpdate(booking.id, "completed")}
@@ -494,8 +483,6 @@ export function BookingsClient({
                       </button>
                     )}
 
-                    {/* Leave a Review action — student/parent only, once the
-                        tutor has marked the session Completed */}
                     {userRole !== "tutor" && booking.status === "completed" && (
                       booking.review ? (
                         <span className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-semibold text-amber-700">
@@ -513,7 +500,6 @@ export function BookingsClient({
                       )
                     )}
 
-                    {/* Decline / Cancel action */}
                     {booking.status !== "cancelled" && booking.status !== "completed" && (
                       <button
                         onClick={() => handleStatusUpdate(booking.id, "cancelled")}
@@ -531,7 +517,7 @@ export function BookingsClient({
         </div>
       )}
 
-      {/* Propose New Time (Reschedule) Modal — tutor only */}
+      {/* Propose New Time Modal */}
       <Modal
         open={!!rescheduleTarget}
         title={`Propose a new time${rescheduleTarget?.student?.name ? ` for ${rescheduleTarget.student.name}` : ""}`}

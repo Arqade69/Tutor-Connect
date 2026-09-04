@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { notifyUser } from "@/lib/notify";
+import { awardRewardPoints } from "./rewards";
 
 // Full names of the days, in JS `Date.getDay()` order (0 = Sunday).
 const JS_DAY_NAMES = [
@@ -109,15 +110,11 @@ export async function createBooking(input: CreateBookingInput) {
       if (b.startTime !== slot.startTime) return false;
 
       if (b.bookingType === "monthly") {
-        // Monthly booking blocks slots ONLY during its 1-month active duration (30 days from b.date)
         const isCurrentlyActiveInMonth = isWithinOneMonthWindow(b.date, slotDate);
         const dayMatches = b.dayOfWeek.includes(slotDay);
         return isCurrentlyActiveInMonth && dayMatches;
       } else {
-        // One-time booking conflict on exact date
         if (b.date === slotDate) return true;
-
-        // If current request is monthly, check if one-time booking falls within requested monthly window
         if (type === "monthly" && b.dayOfWeek.includes(slotDay) && isWithinOneMonthWindow(slotDate, b.date)) {
           return true;
         }
@@ -132,7 +129,6 @@ export async function createBooking(input: CreateBookingInput) {
     }
   }
 
-  // Summarize slots into 1 single booking record
   const uniqueDays = Array.from(new Set(slots.map((s) => s.dayOfWeek))).join(", ");
   const summarizedTimes = slots.map((s) => `${s.startTime}-${s.endTime}`).join(", ");
   const slotSummary = slots.map((s) => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`).join(" | ");
@@ -143,7 +139,6 @@ export async function createBooking(input: CreateBookingInput) {
 
   const firstSlot = slots[0];
 
-  // Create 1 single booking record for the monthly or one-time request
   const booking = await prisma.booking.create({
     data: {
       studentId: currentUser.id,
@@ -165,7 +160,6 @@ export async function createBooking(input: CreateBookingInput) {
 
   const sessionLabel = `${input.subject} session on ${baseDate} (${firstSlot.startTime}-${firstSlot.endTime})`;
 
-  // Booking confirmation — to the student/parent who just requested it.
   await notifyUser({
     userId: currentUser.id,
     email: currentUser.email,
@@ -175,7 +169,6 @@ export async function createBooking(input: CreateBookingInput) {
     metadata: { bookingId: booking.id },
   });
 
-  // New booking alert — to the tutor who needs to act on it.
   await notifyUser({
     userId: tutor.userId,
     email: tutor.user.email,
@@ -184,6 +177,13 @@ export async function createBooking(input: CreateBookingInput) {
     message: `${currentUser.name ?? "A student"} requested a ${sessionLabel}. Review it in your bookings dashboard.`,
     metadata: { bookingId: booking.id },
   });
+
+  // Award reward points for booking a session
+  await awardRewardPoints(
+    currentUser.id,
+    "booking_created",
+    `Booked a ${type} session for ${input.subject}`
+  );
 
   return {
     success: true,
@@ -220,13 +220,9 @@ export async function getUserBookings() {
         },
         review: { select: { id: true, rating: true } },
       },
-      // Clear, date-sorted view: soonest sessions/requests first, so a
-      // tutor can scan upcoming demand at a glance rather than by the
-      // order requests happened to come in.
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
     });
   } else {
-    // student or parent
     return prisma.booking.findMany({
       where: { studentId: currentUser.id },
       include: {
@@ -266,7 +262,6 @@ export async function updateBookingStatus(
 
   if (!booking) return { error: "Booking not found" };
 
-  // Authorization check
   const isTutorOwner = booking.tutor.userId === currentUser.id;
   const isStudentOwner = booking.studentId === currentUser.id;
   const isAdmin = currentUser.role === "admin";
@@ -275,9 +270,6 @@ export async function updateBookingStatus(
     return { error: "You do not have permission to update this booking." };
   }
 
-  // Only the tutor (or an admin) can approve a request or mark a session as
-  // done — a student/parent can request or cancel, but can't complete it
-  // themselves, since completion is what unlocks leaving a review.
   if ((status === "confirmed" || status === "completed") && !isTutorOwner && !isAdmin) {
     return {
       error:
@@ -303,8 +295,6 @@ export async function updateBookingStatus(
     where: { id: bookingId },
     data: {
       status,
-      // Any pending reschedule proposal is moot once the tutor or student
-      // takes a direct action on the booking (confirm/cancel/complete).
       ...(booking.rescheduleStatus === "pending"
         ? {
             rescheduleStatus: "none",
@@ -320,8 +310,6 @@ export async function updateBookingStatus(
 
   const sessionLabel = `${booking.subject} session on ${booking.date} (${booking.startTime}-${booking.endTime})`;
 
-  // Notify the *other* party whenever the tutor takes the action; when a
-  // student/parent cancels, let the tutor know instead.
   if (isTutorOwner || isAdmin) {
     if (status === "confirmed") {
       await notifyUser({
@@ -362,20 +350,23 @@ export async function updateBookingStatus(
     });
   }
 
+  if (status === "completed") {
+    await awardRewardPoints(
+      booking.studentId,
+      "session_completed",
+      `Completed a tutoring session`
+    );
+  }
+
   revalidatePath("/dashboard/bookings");
   return { success: true };
 }
 
-// =====================================================================
-//  Reschedule proposals — tutor proposes a new date/time for a booking,
-//  the student/parent then accepts or declines it.
-// =====================================================================
-
 export type ProposeRescheduleInput = {
   bookingId: string;
-  proposedDate: string; // YYYY-MM-DD
-  proposedStartTime: string; // HH:mm
-  proposedEndTime: string; // HH:mm
+  proposedDate: string;
+  proposedStartTime: string;
+  proposedEndTime: string;
   note?: string;
 };
 
@@ -431,7 +422,6 @@ export async function proposeReschedule(input: ProposeRescheduleInput) {
   return { success: true };
 }
 
-/** Tutor withdraws their own pending reschedule proposal. */
 export async function cancelRescheduleProposal(bookingId: string) {
   const currentUser = await getCurrentUser();
   if (!currentUser) return { error: "Unauthorized" };
@@ -464,7 +454,6 @@ export async function cancelRescheduleProposal(bookingId: string) {
   return { success: true };
 }
 
-/** Student/parent accepts or declines a tutor's reschedule proposal. */
 export async function respondToReschedule(bookingId: string, accept: boolean) {
   const currentUser = await getCurrentUser();
   if (!currentUser) return { error: "Unauthorized" };
@@ -496,8 +485,6 @@ export async function respondToReschedule(bookingId: string, accept: boolean) {
         proposedStartTime: null,
         proposedEndTime: null,
         rescheduleNote: null,
-        // The session time changed, so reset reminder tracking — otherwise
-        // the 24h/1h reminders could silently fail to fire for the new time.
         reminder24SentForDate: null,
         reminder1SentForDate: null,
       },

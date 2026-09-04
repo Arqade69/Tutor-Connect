@@ -9,6 +9,7 @@ function explore(includeAi = true): NavGroup {
     items: [
       { label: "Find a Tutor", href: "/dashboard/tutors", icon: "search" },
       ...(includeAi ? [{ label: "TutorBot AI", href: "/dashboard/tutorbot", icon: "robot" as const }] : []),
+      { label: "Subscription & Plans", href: "/dashboard/subscription", icon: "crown" },
       { label: "My Bookings", href: "/dashboard/bookings", icon: "calendar" },
       { label: "Chat Room", href: "/dashboard/chat", icon: "chat" },
     ],
@@ -31,6 +32,7 @@ function navFor(role: string, home: string): NavGroup[] {
         heading: "Modules & Explore",
         items: [
           { label: "Find a Tutor", href: "/dashboard/tutors", icon: "search" },
+          { label: "Subscription & Plans", href: "/dashboard/subscription", icon: "crown" },
           { label: "All Bookings", href: "/dashboard/bookings", icon: "calendar" },
           { label: "Chat Room", href: "/dashboard/chat", icon: "chat" },
         ],

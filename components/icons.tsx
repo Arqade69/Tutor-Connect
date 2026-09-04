@@ -205,10 +205,31 @@ export function SettingsIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function CrownIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <path d="M2 4l3 12h14l3-12-6 7-4-5-4 5-6-7z" />
+      <path d="M5 20h14" />
+    </Svg>
+  );
+}
+
 export function ShieldIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Svg {...props}>
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </Svg>
+  );
+}
+
+export function GiftIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <rect x="5" y="12" width="14" height="8" rx="1" />
+      <path d="M12 8v12" />
+      <path d="M12 8c-2-2-5-2.5-5 0s3 2 5 2" />
+      <path d="M12 8c2-2 5-2.5 5 0s-3 2-5 2" />
     </Svg>
   );
 }
