@@ -1,156 +1,198 @@
-# Tutor-Connect — Student Profile & Academic Info Management
+# Tutor-Connect — Full-Stack Online Tutoring Platform
 
-Module 1 of the **Tutor-Connect** online tutoring platform (CSE471, Group 01).
-A full-stack Next.js app that lets **Students**, **Parents**, and an **Admin** manage
-profiles and academic information, secured with **Google authentication** (with a
-one-click demo login for quick exploration).
-
-> Implemented feature (Rezaul Mostofa, ID 23301511):
-> *"Students/Parents get a personal dashboard to manage their accounts and academic
-> details … Parents can manage multiple student profiles under a single account."*
+**Tutor-Connect** is a comprehensive, production-ready online tutoring and academic management platform built with **Next.js 15**, **TypeScript**, **Prisma ORM**, **PostgreSQL**, **Auth.js (v5)**, and **Tailwind CSS**. It connects students and parents with qualified tutors, featuring map-based discovery, real-time booking and rescheduling, direct messaging, an AI-powered study assistant, integrated payment processing via **UddoktaPay**, and a flexible reward points incentive system.
 
 ---
 
-## What's inside
+## 🚀 Key Features
 
-| Role | Dashboard (`/dashboard/...`) | Capabilities |
-|------|------------------------------|--------------|
-| **Student** | `/student` | Edit personal info (name, phone, location, district); add/edit/delete **academic details** (current class, institution, subjects). |
-| **Parent** | `/parent` | Edit own personal info; add/edit/delete **multiple student profiles** under one account. |
-| **Admin** | `/admin` | View & search all users; toggle **Premium**, **suspend/activate**, change role, delete; per-user detail (academic info / student profiles). Stats tiles. |
+### 🎓 1. Student & Parent Accounts
+- **Student Dashboard:** Manage personal details, district/location, geocoded coordinates, and academic records (current class, institution, enrolled subjects).
+- **Parent Accounts:** Single parent dashboard to create and manage **multiple student profiles** under one account.
+- **Onboarding Flow:** Smooth initial setup for new users with role selection and profile setup.
 
-Login is via **Google OAuth**. Until you configure Google Cloud credentials, the login
-page also offers **one-click demo accounts** (`AUTH_DEMO_LOGIN=1`).
+### 👨‍🏫 2. Tutor Profiles & Availability Management
+- **Tutor Registration & Verification:** Tutor application queue with Admin verification status (`pending`, `approved`, `rejected`).
+- **Rich Profiles:** Bio, tagline, subjects, class levels, instruction medium (*Bangla*, *English*, or *Both*), and hourly rates.
+- **Weekly Schedule Management:** Tutors can set bookable weekly time slots (`Saturday` through `Friday`) with custom start and end times.
+- **Public Visibility:** Tutors can toggle profile visibility in public search results.
+
+### 🔍 3. Tutor Search, Filters & Interactive Map Discovery
+- **Multi-Filter Search:** Filter tutors by subject, class level, medium, district, and maximum hourly fee.
+- **Location & Map Discovery:** Map-based tutor search leveraging geocoded latitude/longitude coordinates.
+- **Ratings & Reviews:** Verified reviews and star ratings left by students/parents after completed sessions.
+
+### 📅 4. Session Booking & Rescheduling Workflow
+- **Flexible Bookings:** Support for both one-time and recurring monthly tutoring sessions.
+- **Slot Reservation:** Interactive selection of bookable availability slots.
+- **Reschedule Proposal System:** Tutors can propose new dates/times with optional explanations; students can accept or decline directly from their dashboard.
+- **Automated Session Reminders:** Built-in tracking for 24-hour and 1-hour session reminders.
+
+### 💬 5. Direct Messaging & Notifications
+- **Chat Rooms:** In-app direct messaging between students/parents and tutors.
+- **Notification Center:** Real-time in-app alerts for booking status updates, reschedule proposals, and system notices.
+
+### 🤖 6. AI Study Assistant (TutorBot)
+- **AI-Powered Learning:** Integrated AI Study Assistant powered by **Google Gemini API** (`@google/genai`).
+- **Smart Recommendations:** Provides subject-matter assistance and intelligently suggests scheduling sessions with live human tutors when extra help is needed.
+- **Usage Limits:** Daily usage tracking with tier-based limits (Free vs. Premium).
+
+### 💳 7. Subscription & UddoktaPay Payment Gateway
+- **Premium Plans:** Monthly and Annual Premium Subscriptions for enhanced features and higher AI limits.
+- **UddoktaPay Integration:** Local Bangladeshi payment gateway integration supporting **bKash**, **Nagad**, **Rocket**, and bank cards.
+- **Automated Webhooks:** Instant payment verification, transaction reference tracking, and automated account upgrades.
+
+### 🎁 8. Reward Points & Loyalty System
+- **Earn Points:** Earn reward points for completed tutoring sessions, booking activities, platform reviews, and subscription renewals.
+- **Point Redemption:** Redeem accumulated points for direct discount Taka amounts on premium subscription plans.
+- **Audit Logs:** Full history tracking for point earnings and redemptions.
+
+### 🛡️ 9. Admin Dashboard & System Settings
+- **User Management:** Search, view, suspend, activate, flag accounts with reason, or grant Premium status.
+- **Tutor Verification Queue:** Review and approve pending tutor applications.
+- **Dynamic System Settings:** Admin control over reward point redemption rates, points per booking, subscription pricing, and platform commission rates.
+- **Platform Analytics:** User growth, active bookings, verified tutors, and subscription revenue statistics.
+
+### 📈 10. Tutor Analytics Dashboard
+- Performance metrics, total earnings, active bookings, completed sessions, and review summaries for tutors.
 
 ---
 
-## Tech stack
+## 🛠️ Tech Stack
 
-- **Next.js 15** (App Router) + **TypeScript** + **React 19**
-- **Tailwind CSS**
-- **Prisma** ORM + **PostgreSQL**
-- **Auth.js v5** (`next-auth`) — Google provider + demo Credentials provider
-- Runs on **port 1511** → http://127.0.0.1:1511
-
----
-
-## Prerequisites
-
-1. **Node.js 18+** and npm (tested on Node 24).
-2. **PostgreSQL** installed and running on port 5432.
+- **Framework:** Next.js 15 (App Router) + React 19 + TypeScript
+- **Styling:** Tailwind CSS + PostCSS
+- **Database & ORM:** PostgreSQL + Prisma ORM
+- **Authentication:** Auth.js v5 (`next-auth`) — Google OAuth & Credentials
+- **Payment Gateway:** UddoktaPay API
+- **AI Integration:** Google Gemini API (`@google/genai`)
+- **Port:** Configured to run on `port 1511` by default
 
 ---
 
-## Setup
+## 📋 Prerequisites
 
+Before running the project locally, ensure you have:
+1. **Node.js 18+** installed.
+2. **PostgreSQL** installed and running on default port `5432`.
+
+---
+
+## ⚙️ Environment Setup (`.env`)
+
+Create a `.env` file in the root directory based on the following template:
+
+```env
+# Database
+DATABASE_URL="postgresql://postgres:password@localhost:5432/tutor_connect_web?schema=public"
+
+# Auth.js / NextAuth
+AUTH_SECRET="your-super-secret-key" # Generate via `npx auth secret`
+
+# Google OAuth
+AUTH_GOOGLE_ID="your-google-client-id"
+AUTH_GOOGLE_SECRET="your-google-client-secret"
+
+# Demo Mode & Admin Setup
+AUTH_DEMO_LOGIN="1" # Set to "1" to enable one-click demo accounts on login
+ADMIN_EMAIL="admin@tutorconnect.com" # Comma-separated emails to automatically grant Admin role
+
+# AI Assistant (Google Gemini)
+GEMINI_API_KEY="your-gemini-api-key"
+
+# UddoktaPay Gateway
+UDDOKTAPAY_API_KEY="your-uddoktapay-api-key"
+UDDOKTAPAY_API_URL="https://sandbox.uddoktapay.com/api/v2/recharge" # Sandbox or Live endpoint
+NEXT_PUBLIC_APP_URL="http://127.0.0.1:1511"
+```
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Install Dependencies
 ```bash
-# 1. Install dependencies
 npm install
+```
 
-# 2. Configure environment
-cp .env.example .env
-#   - set DATABASE_URL (user/password/database)
-#   - set AUTH_SECRET  (run:  npx auth secret)
-#   - (optional) set AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET
-#   - (optional) ADMIN_EMAIL="you@gmail.com"
-
-# 3. Create the database (once). In psql / pgAdmin:
-#      CREATE DATABASE tutor_connect_web;
-#    Or via createdb:
-#      createdb -U postgres tutor_connect_web
-
-# 4. Create tables + seed demo data
+### 2. Set Up Database
+Create the PostgreSQL database (e.g., `tutor_connect_web`), then push the schema and seed sample data:
+```bash
+# Push database schema
 npm run db:push
-npm run seed
 
-# 5. Run the app
+# Seed demo users, tutors, bookings, and system settings
+npm run seed
+```
+
+### 3. Run Development Server
+```bash
 npm run dev
 ```
-
-Open **http://127.0.0.1:1511**.
-
----
-
-## Authentication
-
-### Option A — Demo login (no setup)
-
-With `AUTH_DEMO_LOGIN="1"`, the login page shows three buttons:
-
-- **Student** → `demo-student@tutorconnect.local`
-- **Parent** → `demo-parent@tutorconnect.local` (seeded with 2 student profiles)
-- **Admin** → `demo-admin@tutorconnect.local`
-
-### Option B — Google OAuth
-
-1. Go to **Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth client ID** (type: *Web application*).
-2. Under **Authorized redirect URIs**, add:
-   ```
-   http://127.0.0.1:1511/api/auth/callback/google
-   ```
-3. Copy the **Client ID** and **Client Secret** into `.env`:
-   ```
-   AUTH_GOOGLE_ID="your-client-id"
-   AUTH_GOOGLE_SECRET="your-client-secret"
-   ```
-4. (Optional) Make yourself an admin without the demo button by listing your Google email:
-   ```
-   ADMIN_EMAIL="rezaul.mostofa@gmail.com"
-   ```
-
-On first Google login, a **student/parent** completes a short onboarding step (choose role
-+ fill name/phone/district). Emails in `ADMIN_EMAIL` skip onboarding and land on the admin
-dashboard directly.
+Open **[http://127.0.0.1:1511](http://127.0.0.1:1511)** in your browser.
 
 ---
 
-## Environment variables (`.env`)
+## 🔐 Demo Login Accounts
 
-| Variable | Required | Description |
+When `AUTH_DEMO_LOGIN="1"` is enabled, the sign-in page displays one-click instant login buttons:
+
+| Role | Email | Capabilities |
 |---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `AUTH_SECRET` | ✅ | Session encryption secret (`npx auth secret`) |
-| `AUTH_GOOGLE_ID` | demo only | Google OAuth client ID |
-| `AUTH_GOOGLE_SECRET` | demo only | Google OAuth client secret |
-| `AUTH_DEMO_LOGIN` | optional | `1` to show demo login buttons |
-| `ADMIN_EMAIL` | optional | Comma-separated Google emails that become admins |
+| **Student** | `demo-student@tutorconnect.local` | Search tutors, book slots, chat, manage academic profile, review sessions |
+| **Parent** | `demo-parent@tutorconnect.local` | Manage multiple student profiles, book tutors for children, chat |
+| **Tutor** | `demo-tutor@tutorconnect.local` | Manage schedule slots, view bookings, propose reschedules, view tutor analytics |
+| **Admin** | `demo-admin@tutorconnect.local` | User management, tutor verification queue, system settings, platform analytics |
 
 ---
 
-## Project structure
+## 📂 Project Structure
 
 ```
-app/
-  page.tsx                # Landing page
-  login/                  # Sign-in (Google + demo)
-  onboarding/             # First-login role + profile completion
-  dashboard/{layout,student,parent,admin}/   # Role-based dashboards
-  api/auth/[...nextauth]/route.ts             # Auth.js handler
-auth.ts                   # Auth.js config (providers, callbacks)
-middleware.ts             # Route protection + onboarding redirect
-actions/{profile,academic,students,admin}.ts  # Server actions (mutations)
-lib/{prisma,session,constants}.ts
-components/               # ProfileForm, AcademicInfoList, StudentProfileList, UsersTable, …
-prisma/{schema.prisma, seed.ts}
+├── actions/                  # Server Actions (tutors, bookings, admin, subscriptions, rewards)
+├── app/                      # Next.js App Router
+│   ├── api/                  # API routes (Auth, UddoktaPay Webhook)
+│   ├── dashboard/            # Role-based dashboards (Student, Parent, Tutor, Admin)
+│   ├── login/                # Authentication page
+│   ├── onboarding/           # Role assignment & profile onboarding
+│   ├── layout.tsx            # Root layout & providers
+│   └── page.tsx              # Public landing page
+├── components/               # UI components, dashboards, modals, search forms, map views
+├── lib/                      # Database client, session helpers, constants, UddoktaPay client
+├── prisma/
+│   ├── schema.prisma         # Database models & relationships
+│   └── seed.ts               # Database seed script
+├── public/                   # Static assets & images
+├── scripts/                  # Helper scripts (e.g., free-port.mjs)
+├── middleware.ts             # Route protection & role onboarding middleware
+├── package.json
+└── README.md
 ```
 
 ---
 
-## Scripts
+## 📜 Available NPM Scripts
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Start dev server on port 1511 |
-| `npm run build` | Production build |
-| `npm run db:push` | Push schema to the database |
-| `npm run seed` | Seed demo + sample users |
-| `npm run db:studio` | Open Prisma Studio (browse data at http://localhost:5555) |
+| Script | Command | Action |
+|---|---|---|
+| Dev Server | `npm run dev` | Starts dev server on port `1511` |
+| Production Build | `npm run build` | Builds the production bundle |
+| DB Push | `npm run db:push` | Syncs Prisma schema with PostgreSQL |
+| DB Seed | `npm run seed` | Seeds initial data & demo accounts |
+| Prisma Studio | `npm run db:studio` | Opens visual database explorer at `http://localhost:5555` |
+| Prisma Client | `npm run prisma:generate` | Generates Prisma client |
 
 ---
 
-## Notes / scope
+## 🌐 Deployment on Vercel
 
-This implementation covers **Module 1 (Student Profile & Academic Info Management)** end to
-end, plus a basic **admin user-management** panel. Cross-module features shown as
-placeholders (Find Tutors, Book a Session, AI TutorBot) belong to other modules and are
-intentionally out of scope here.
+1. Push your repository to GitHub.
+2. Import your repository into **Vercel**.
+3. Configure the environment variables (`DATABASE_URL`, `AUTH_SECRET`, `GEMINI_API_KEY`, `UDDOKTAPAY_API_KEY`, etc.) in Vercel Project Settings.
+4. Deployment builds automatically using `npm run build` (with `postinstall: prisma generate` pre-configured in `package.json`).
+
+---
+
+## 📄 License
+
+This project is open-source and available under the **MIT License**.
