@@ -71,7 +71,7 @@ export function LoginForm({
     });
   };
 
-  const demo = (role: "student" | "parent" | "tutor") =>
+  const demo = (role: "student" | "parent" | "tutor" | "admin") =>
     startTransition(() => {
       void signIn("demo", { role, callbackUrl: "/" });
     });
@@ -273,7 +273,7 @@ export function LoginForm({
               or try a demo account
               <span className="h-px flex-1 bg-slate-200" />
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <button onClick={() => demo("student")} disabled={pending} className="btn-secondary py-2">
                 Student
               </button>
@@ -282,6 +282,9 @@ export function LoginForm({
               </button>
               <button onClick={() => demo("tutor")} disabled={pending} className="btn-secondary py-2">
                 Tutor
+              </button>
+              <button onClick={() => demo("admin")} disabled={pending} className="btn-secondary py-2 text-brand-600 font-semibold border-brand-200 hover:bg-brand-50">
+                Admin
               </button>
             </div>
           </>
