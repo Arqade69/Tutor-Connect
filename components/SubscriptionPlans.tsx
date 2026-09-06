@@ -9,6 +9,8 @@ interface SubscriptionPlansProps {
   expiresAt?: string | null;
   rewardPoints: number;
   pointsPerTaka: number;
+  monthlyPrice?: number;
+  yearlyPrice?: number;
 }
 
 export function SubscriptionPlans({
@@ -17,6 +19,8 @@ export function SubscriptionPlans({
   expiresAt,
   rewardPoints,
   pointsPerTaka,
+  monthlyPrice = 150,
+  yearlyPrice = 1500,
 }: SubscriptionPlansProps) {
   const [billingCycle, setBillingCycle] = useState<PlanType>("monthly");
   const [errorMsg, setErrorMsg] = useState("");
@@ -24,7 +28,7 @@ export function SubscriptionPlans({
   const [usePoints, setUsePoints] = useState(false);
   const [redeemSlider, setRedeemSlider] = useState(0);
 
-  const baseAmount = billingCycle === "yearly" ? 1500 : 150;
+  const baseAmount = billingCycle === "yearly" ? yearlyPrice : monthlyPrice;
   const maxDiscount = baseAmount - 10; // Minimum ৳10 payable
   const maxRedeemablePoints = Math.min(rewardPoints, maxDiscount * pointsPerTaka);
   const actualRedeem = usePoints ? Math.min(redeemSlider, maxRedeemablePoints) : 0;
@@ -57,7 +61,7 @@ export function SubscriptionPlans({
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Monthly Billing (৳150/mo)
+            Monthly Billing (৳{monthlyPrice.toLocaleString()}/mo)
           </button>
           <button
             onClick={() => { setBillingCycle("yearly"); setRedeemSlider(0); }}
@@ -67,10 +71,12 @@ export function SubscriptionPlans({
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <span>Yearly Billing (৳1,500/yr)</span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-              Save ৳300
-            </span>
+            <span>Yearly Billing (৳{yearlyPrice.toLocaleString()}/yr)</span>
+            {yearlyPrice < monthlyPrice * 12 && (
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                Save ৳{(monthlyPrice * 12 - yearlyPrice).toLocaleString()}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -174,7 +180,7 @@ export function SubscriptionPlans({
               ) : (
                 <>
                   <span className="text-4xl font-black text-slate-900">
-                    ৳{billingCycle === "yearly" ? "1,500" : "150"}
+                    ৳{baseAmount.toLocaleString()}
                   </span>
                   <span className="text-sm font-medium text-slate-500">
                     {billingCycle === "yearly" ? " / year" : " / month"}
@@ -264,7 +270,7 @@ export function SubscriptionPlans({
               </li>
               <li className="flex items-center gap-3 font-medium">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-white text-xs">✓</span>
-                Earn {billingCycle === "yearly" ? "500" : "50"} Reward Points per subscription
+                Earn bonus Reward Points per subscription renewal
               </li>
               <li className="flex items-center gap-3 font-medium">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-white text-xs">✓</span>
@@ -289,7 +295,7 @@ export function SubscriptionPlans({
                 ? discountTaka > 0
                   ? `Extend Premium — Pay ৳${finalAmount.toLocaleString()} (৳${discountTaka} off)`
                   : "Extend Premium Subscription"
-                : `Pay ৳${billingCycle === "yearly" ? "1,500" : "150"} via UddoktaPay`}
+                : `Pay ৳${baseAmount.toLocaleString()} via UddoktaPay`}
             </button>
           </div>
         </div>

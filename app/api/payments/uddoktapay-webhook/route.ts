@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPaymentReceiptEmail } from "@/lib/email";
+import { getRewardSettingValue } from "@/actions/rewards";
 
 export async function POST(req: Request) {
   try {
@@ -54,7 +55,9 @@ export async function POST(req: Request) {
     const durationDays = planType === "yearly" ? 365 : 30;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + durationDays);
-    const bonusPoints = planType === "yearly" ? 500 : 50;
+    const monthlyPts = await getRewardSettingValue("points_renew_monthly");
+    const yearlyPts = await getRewardSettingValue("points_renew_yearly");
+    const bonusPoints = planType === "yearly" ? (yearlyPts || 500) : (monthlyPts || 50);
 
     // Update DB
     if (paymentId) {

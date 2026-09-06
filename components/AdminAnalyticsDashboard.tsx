@@ -16,6 +16,7 @@ export type AdminAnalyticsDashboardProps = {
     platformCommissionRate: number;
     updatedAt: Date | string;
   };
+  rewardSettings?: Record<string, string>;
   userCounts: {
     total: number;
     students: number;
@@ -46,6 +47,7 @@ export type AdminTab = "overview" | "analytics" | "users" | "verifications" | "s
 
 export function AdminAnalyticsDashboard({
   systemSettings,
+  rewardSettings = {},
   userCounts,
   monthlyBookingsStats,
   revenueStats,
@@ -165,7 +167,7 @@ export function AdminAnalyticsDashboard({
               : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
           }`}
         >
-          <span>⚙️</span> Reward Points & Pricing
+          <span>⚙️</span> Platform Settings & Commission
         </button>
 
         <button
@@ -290,16 +292,16 @@ export function AdminAnalyticsDashboard({
             <div className="card p-6 border border-slate-200 flex flex-col justify-between space-y-4">
               <div>
                 <span className="text-2xl">⚙️</span>
-                <h3 className="font-bold text-slate-900 text-base mt-2">Reward Points & Pricing Settings</h3>
+                <h3 className="font-bold text-slate-900 text-base mt-2">Platform Settings & Commission</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Configure student reward point conversion rates, monthly/annual premium pricing, and platform commission.
+                  Configure platform commission rate and core system parameters.
                 </p>
               </div>
               <button
                 onClick={() => handleTabChange("settings")}
                 className="btn border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs py-2 w-full font-semibold"
               >
-                Configure System Pricing →
+                Configure Platform Commission →
               </button>
             </div>
           </div>
@@ -567,15 +569,15 @@ export function AdminAnalyticsDashboard({
       {activeTab === "settings" && (
         <div className="card p-6 shadow-sm border border-slate-200 space-y-6">
           <div className="border-b border-slate-200 pb-4">
-            <h2 className="text-lg font-bold text-slate-900">Subscription Pricing & Platform Settings</h2>
+            <h2 className="text-lg font-bold text-slate-900">Subscription Pricing & Reward Points Settings</h2>
             <p className="text-xs text-slate-500">
-              Configure student/tutor premium subscription fees and platform commission.
+              Configure premium subscription prices, reward points for key activities, and platform commission.
             </p>
           </div>
 
           {settingsSaved && (
             <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 text-sm font-medium flex items-center justify-between">
-              <span>✓ System parameters and subscription pricing updated successfully!</span>
+              <span>✓ System parameters, subscription pricing, and reward point rules updated successfully!</span>
               <button onClick={() => setSettingsSaved(false)} className="text-xs text-emerald-700 underline">Dismiss</button>
             </div>
           )}
@@ -583,41 +585,144 @@ export function AdminAnalyticsDashboard({
           <form
             action={asFormAction(adminUpdateSystemSettings)}
             onSubmit={() => setSettingsSaved(true)}
-            className="space-y-6 max-w-3xl"
+            className="space-y-6 max-w-4xl"
           >
 
             {/* Subscription Pricing Section */}
             <div className="space-y-4 bg-slate-50 p-5 rounded-xl border border-slate-200">
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <span>💎</span> Subscription Pricing Configuration
+                <span>💰</span> Subscription Pricing (BDT)
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Monthly Premium Subscription Fee (BDT)
+                    Monthly Subscription Fee (৳)
                   </label>
                   <input
                     type="number"
-                    name="premiumMonthlyPrice"
-                    defaultValue={systemSettings.premiumMonthlyPrice}
+                    min="0"
+                    name="premium_monthly_price"
+                    defaultValue={rewardSettings.premium_monthly_price ?? String(systemSettings.premiumMonthlyPrice ?? 150)}
                     className="input w-full"
                     required
                   />
-                  <p className="text-[11px] text-slate-500 mt-1">Billed monthly for unlimited AI TutorBot & premium features.</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Fee for a 30-day Premium membership.</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Yearly Subscription Fee (৳)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="premium_yearly_price"
+                    defaultValue={rewardSettings.premium_yearly_price ?? String(systemSettings.premiumAnnualPrice ?? 1500)}
+                    className="input w-full"
+                    required
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Fee for a 365-day Premium membership.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Reward Points System Section */}
+            <div className="space-y-4 bg-amber-50/40 p-5 rounded-xl border border-amber-200">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <span>🎁</span> Reward Points Configuration
+              </h3>
+              <p className="text-xs text-slate-600">
+                Set points earned by Premium users for specific platform activities and point-to-cash discount conversion.
+              </p>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    📅 Points per Session Booking
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="points_booking"
+                    defaultValue={rewardSettings.points_booking ?? String(systemSettings.rewardPointsPerBooking ?? 20)}
+                    className="input w-full"
+                    required
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Awarded when a session is reserved.</p>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Annual Premium Subscription Fee (BDT)
+                    ✅ Points per Completed Session
                   </label>
                   <input
                     type="number"
-                    name="premiumAnnualPrice"
-                    defaultValue={systemSettings.premiumAnnualPrice}
+                    min="0"
+                    name="points_session_completed"
+                    defaultValue={rewardSettings.points_session_completed ?? "30"}
                     className="input w-full"
                     required
                   />
-                  <p className="text-[11px] text-slate-500 mt-1">Discounted annual subscription option.</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Awarded when session status becomes completed.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    💳 Points per Monthly Renewal
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="points_renew_monthly"
+                    defaultValue={rewardSettings.points_renew_monthly ?? "50"}
+                    className="input w-full"
+                    required
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Awarded for activating/renewing monthly plan.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    👑 Points per Yearly Renewal
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="points_renew_yearly"
+                    defaultValue={rewardSettings.points_renew_yearly ?? "500"}
+                    className="input w-full"
+                    required
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Awarded for activating/renewing yearly plan.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    ⭐ Points per Written Review
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="points_review"
+                    defaultValue={rewardSettings.points_review ?? "25"}
+                    className="input w-full"
+                    required
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Awarded when a review is posted for a tutor.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    💱 Points per ৳1 Discount
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    name="points_per_taka"
+                    defaultValue={rewardSettings.points_per_taka ?? "20"}
+                    className="input w-full"
+                    required
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Conversion rate (e.g. 20 pts = ৳1 off).</p>
                 </div>
               </div>
             </div>
@@ -648,7 +753,7 @@ export function AdminAnalyticsDashboard({
                 type="submit"
                 className="btn btn-brand px-6 py-2.5 font-semibold text-sm shadow-md"
               >
-                Save System Parameters
+                Save System Parameters & Pricing
               </button>
             </div>
           </form>

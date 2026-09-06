@@ -19,7 +19,9 @@ export async function initiateUddoktaPay(
 ): Promise<{ ok: boolean; paymentUrl?: string; error?: string }> {
   try {
     const user = await requireUser();
-    const baseAmount = planType === "yearly" ? 1500 : 150;
+    const monthlyPrice = await getRewardSettingValue("premium_monthly_price");
+    const yearlyPrice = await getRewardSettingValue("premium_yearly_price");
+    const baseAmount = planType === "yearly" ? (yearlyPrice || 1500) : (monthlyPrice || 150);
 
     // Calculate discount from redeemed points
     let discountAmount = 0;
@@ -58,11 +60,13 @@ export async function initiateUddoktaPay(
       },
     });
 
-    const baseUrl =
-      process.env.UDDOKTAPAY_BASE_URL || "https://sandbox.uddoktapay.com";
+    const baseUrl = (
+      process.env.UDDOKTAPAY_BASE_URL || "https://sandbox.uddoktapay.com"
+    ).replace(/\/+$/, "");
     const apiKey = process.env.UDDOKTAPAY_API_KEY;
-    const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:1511";
+    const appUrl = (
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:1511"
+    ).replace(/\/+$/, "");
 
     if (!apiKey) {
       throw new Error("UddoktaPay API key is not configured in .env");
@@ -122,8 +126,9 @@ export async function verifyUddoktaPayInvoice(invoiceId: string) {
   try {
     const cleanInvoiceId = invoiceId.trim();
 
-    const baseUrl =
-      process.env.UDDOKTAPAY_BASE_URL || "https://sandbox.uddoktapay.com";
+    const baseUrl = (
+      process.env.UDDOKTAPAY_BASE_URL || "https://sandbox.uddoktapay.com"
+    ).replace(/\/+$/, "");
     const apiKey = process.env.UDDOKTAPAY_API_KEY;
 
     if (!apiKey) {
@@ -204,10 +209,12 @@ export async function verifyUddoktaPayInvoice(invoiceId: string) {
     const currentExpiry = user.premiumExpiresAt ? new Date(user.premiumExpiresAt) : null;
     const baseDate =
       user.isPremium && currentExpiry && currentExpiry > now ? currentExpiry : now;
-
     const expiresAt = new Date(baseDate);
     expiresAt.setDate(expiresAt.getDate() + durationDays);
-    const bonusPoints = planType === "yearly" ? 500 : 50;
+
+    const monthlyRenewalPoints = await getRewardSettingValue("points_renew_monthly");
+    const yearlyRenewalPoints = await getRewardSettingValue("points_renew_yearly");
+    const bonusPoints = planType === "yearly" ? (yearlyRenewalPoints || 500) : (monthlyRenewalPoints || 50);
 
     // 3. Atomically update DB in transaction
     if (paymentRecord) {
@@ -229,7 +236,6 @@ export async function verifyUddoktaPayInvoice(invoiceId: string) {
             isPremium: true,
             subscriptionPlan: planType,
             premiumExpiresAt: expiresAt,
-            rewardPoints: { increment: bonusPoints },
           },
         }),
         prisma.notification.create({
@@ -250,7 +256,6 @@ export async function verifyUddoktaPayInvoice(invoiceId: string) {
             isPremium: true,
             subscriptionPlan: planType,
             premiumExpiresAt: expiresAt,
-            rewardPoints: { increment: bonusPoints },
           },
         }),
         prisma.notification.create({
@@ -285,12 +290,11 @@ export async function verifyUddoktaPayInvoice(invoiceId: string) {
     }
 
     // 5. Award subscription renewal reward points
-    const renewalBonus = planType === "yearly" ? 500 : 50;
     await awardRewardPoints(
       user.id,
       "subscription_renewed",
       `${planType === "yearly" ? "Yearly" : "Monthly"} Premium subscription activated`,
-      renewalBonus
+      bonusPoints
     );
 
     // 6. Send Email Receipt

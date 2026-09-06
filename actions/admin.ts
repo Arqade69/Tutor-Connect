@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { guard, clean, requireRole, revalidatePath } from "./_shared";
+import { getRewardSettings } from "./rewards";
 
 async function getTarget(id: string, adminId: string) {
   if (!id) throw new Error("User id is required.");
@@ -105,10 +106,17 @@ export async function adminUpdateSystemSettings(formData: FormData) {
   return guard(async () => {
     await requireRole("admin");
     const rewardPointRate = parseFloat(clean(formData.get("rewardPointRate")) || "1.0");
-    const rewardPointsPerBooking = parseInt(clean(formData.get("rewardPointsPerBooking")) || "10", 10);
-    const premiumMonthlyPrice = parseInt(clean(formData.get("premiumMonthlyPrice")) || "499", 10);
-    const premiumAnnualPrice = parseInt(clean(formData.get("premiumAnnualPrice")) || "4499", 10);
+    const rewardPointsPerBooking = parseInt(clean(formData.get("rewardPointsPerBooking")) || clean(formData.get("points_booking")) || "20", 10);
+    const premiumMonthlyPrice = parseInt(clean(formData.get("premiumMonthlyPrice")) || clean(formData.get("premium_monthly_price")) || "150", 10);
+    const premiumAnnualPrice = parseInt(clean(formData.get("premiumAnnualPrice")) || clean(formData.get("premium_yearly_price")) || "1500", 10);
     const platformCommissionRate = parseFloat(clean(formData.get("platformCommissionRate")) || "10.0");
+
+    const pointsBooking = parseInt(clean(formData.get("points_booking")) || String(rewardPointsPerBooking), 10);
+    const pointsSessionCompleted = parseInt(clean(formData.get("points_session_completed")) || "30", 10);
+    const pointsRenewMonthly = parseInt(clean(formData.get("points_renew_monthly")) || "50", 10);
+    const pointsRenewYearly = parseInt(clean(formData.get("points_renew_yearly")) || "500", 10);
+    const pointsReview = parseInt(clean(formData.get("points_review")) || "25", 10);
+    const pointsPerTaka = parseInt(clean(formData.get("points_per_taka")) || "20", 10);
 
     if (isNaN(rewardPointRate) || rewardPointRate < 0) throw new Error("Invalid reward point rate.");
     if (isNaN(rewardPointsPerBooking) || rewardPointsPerBooking < 0) throw new Error("Invalid reward points per booking.");
@@ -118,26 +126,48 @@ export async function adminUpdateSystemSettings(formData: FormData) {
       throw new Error("Invalid platform commission rate.");
     }
 
-    await prisma.systemSetting.upsert({
-      where: { id: "default" },
-      update: {
-        rewardPointRate,
-        rewardPointsPerBooking,
-        premiumMonthlyPrice,
-        premiumAnnualPrice,
-        platformCommissionRate,
-      },
-      create: {
-        id: "default",
-        rewardPointRate,
-        rewardPointsPerBooking,
-        premiumMonthlyPrice,
-        premiumAnnualPrice,
-        platformCommissionRate,
-      },
-    });
+    const keyValues: Record<string, string> = {
+      points_booking: String(pointsBooking),
+      points_session_completed: String(pointsSessionCompleted),
+      points_renew_monthly: String(pointsRenewMonthly),
+      points_renew_yearly: String(pointsRenewYearly),
+      points_review: String(pointsReview),
+      points_per_taka: String(pointsPerTaka),
+      premium_monthly_price: String(premiumMonthlyPrice),
+      premium_yearly_price: String(premiumAnnualPrice),
+    };
+
+    await prisma.$transaction([
+      prisma.systemSetting.upsert({
+        where: { id: "default" },
+        update: {
+          rewardPointRate,
+          rewardPointsPerBooking: pointsBooking,
+          premiumMonthlyPrice,
+          premiumAnnualPrice,
+          platformCommissionRate,
+        },
+        create: {
+          id: "default",
+          rewardPointRate,
+          rewardPointsPerBooking: pointsBooking,
+          premiumMonthlyPrice,
+          premiumAnnualPrice,
+          platformCommissionRate,
+        },
+      }),
+      ...Object.entries(keyValues).map(([key, value]) =>
+        prisma.systemSetting.upsert({
+          where: { key },
+          update: { value },
+          create: { id: key, key, value },
+        })
+      ),
+    ]);
 
     revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard/admin/reward-settings");
+    revalidatePath("/dashboard/subscription");
   });
 }
 
@@ -180,13 +210,15 @@ export async function adminGetAnalyticsAndMonitoringData() {
       data: {
         id: "default",
         rewardPointRate: 1.0,
-        rewardPointsPerBooking: 10,
-        premiumMonthlyPrice: 499,
-        premiumAnnualPrice: 4499,
+        rewardPointsPerBooking: 20,
+        premiumMonthlyPrice: 150,
+        premiumAnnualPrice: 1500,
         platformCommissionRate: 10.0,
       },
     });
   }
+
+  const rewardSettings = await getRewardSettings();
 
   // 2. Fetch Users & Tutor Profiles
   const users = await prisma.user.findMany({
@@ -344,6 +376,7 @@ export async function adminGetAnalyticsAndMonitoringData() {
 
   return {
     systemSettings,
+    rewardSettings,
     userCounts: {
       total: totalUsersCount,
       students: studentCount,

@@ -78,6 +78,7 @@ export default async function AdminDashboard() {
   return (
     <AdminAnalyticsDashboard
       systemSettings={analyticsData.systemSettings}
+      rewardSettings={analyticsData.rewardSettings}
       userCounts={analyticsData.userCounts}
       monthlyBookingsStats={analyticsData.monthlyBookingsStats}
       revenueStats={analyticsData.revenueStats}

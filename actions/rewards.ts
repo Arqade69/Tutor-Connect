@@ -5,11 +5,14 @@ import { guard, requireRole, revalidatePath } from "./_shared";
 
 // ---- Default reward settings values ----
 const DEFAULT_SETTINGS: Record<string, string> = {
-  points_per_taka: "20",       // 20 points = ৳1 discount
-  points_booking: "20",        // +20 pts for booking a session
+  points_per_taka: "20",          // 20 points = ৳1 discount
+  points_booking: "20",           // +20 pts for booking a session
   points_session_completed: "30", // +30 pts when session marked completed
-  points_review: "25",         // +25 pts for writing a review
-  // Subscription renewal points are handled separately (50 monthly / 500 yearly)
+  points_renew_monthly: "50",     // +50 pts for renewing monthly subscription
+  points_renew_yearly: "500",     // +500 pts for renewing yearly subscription
+  points_review: "25",            // +25 pts for writing a review
+  premium_monthly_price: "150",   // Monthly subscription fee in BDT
+  premium_yearly_price: "1500",   // Yearly subscription fee in BDT
 };
 
 /**
@@ -32,7 +35,11 @@ export async function getRewardSettings(): Promise<Record<string, string>> {
   if (missing.length > 0) {
     await prisma.$transaction(
       missing.map(([key, value]) =>
-        prisma.systemSetting.create({ data: { key, value } })
+        prisma.systemSetting.upsert({
+          where: { key },
+          update: { value },
+          create: { id: key, key, value },
+        })
       )
     );
     for (const [k, v] of missing) existing.set(k, v);
@@ -79,12 +86,14 @@ export async function updateRewardSettings(formData: FormData) {
         prisma.systemSetting.upsert({
           where: { key },
           update: { value },
-          create: { key, value },
+          create: { id: key, key, value },
         })
       )
     );
 
     revalidatePath("/dashboard/admin/reward-settings");
+    revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard/subscription");
   });
 }
 

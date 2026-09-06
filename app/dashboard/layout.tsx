@@ -32,7 +32,6 @@ function navFor(role: string, home: string): NavGroup[] {
         heading: "Modules & Explore",
         items: [
           { label: "Find a Tutor", href: "/dashboard/tutors", icon: "search" },
-          { label: "Subscription & Plans", href: "/dashboard/subscription", icon: "crown" },
           { label: "All Bookings", href: "/dashboard/bookings", icon: "calendar" },
           { label: "Chat Room", href: "/dashboard/chat", icon: "chat" },
         ],

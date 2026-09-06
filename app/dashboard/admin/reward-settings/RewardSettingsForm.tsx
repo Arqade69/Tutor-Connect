@@ -5,12 +5,6 @@ import { updateRewardSettings } from "@/actions/rewards";
 
 const FIELD_CONFIG = [
   {
-    key: "points_per_taka",
-    label: "Points per ৳1 Discount",
-    description: "How many points equal ৳1 off the subscription price.",
-    icon: "💱",
-  },
-  {
     key: "points_booking",
     label: "Points per Booking",
     description: "Points awarded when a Premium user books a tutoring session.",
@@ -23,10 +17,40 @@ const FIELD_CONFIG = [
     icon: "✅",
   },
   {
+    key: "points_renew_monthly",
+    label: "Points per Monthly Subscription Renewal",
+    description: "Points awarded when a user activates or renews a monthly Premium plan.",
+    icon: "💳",
+  },
+  {
+    key: "points_renew_yearly",
+    label: "Points per Yearly Subscription Renewal",
+    description: "Points awarded when a user activates or renews a yearly Premium plan.",
+    icon: "👑",
+  },
+  {
     key: "points_review",
     label: "Points per Review",
     description: "Points awarded when a Premium user writes a tutor review.",
     icon: "⭐",
+  },
+  {
+    key: "points_per_taka",
+    label: "Points per ৳1 Discount",
+    description: "How many points equal ৳1 off the subscription price.",
+    icon: "💱",
+  },
+  {
+    key: "premium_monthly_price",
+    label: "Monthly Subscription Fee (৳)",
+    description: "Price in BDT for a 30-day Premium plan.",
+    icon: "💵",
+  },
+  {
+    key: "premium_yearly_price",
+    label: "Yearly Subscription Fee (৳)",
+    description: "Price in BDT for a 365-day Premium plan.",
+    icon: "💰",
   },
 ];
 
@@ -89,17 +113,6 @@ export function RewardSettingsForm({
         ))}
       </div>
 
-      {/* Subscription Renewal Points Info */}
-      <div className="card p-5 bg-amber-50/50 border-amber-200">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">👑</span>
-          <span className="text-sm font-semibold text-slate-900">Subscription Renewal Points</span>
-        </div>
-        <p className="text-xs text-slate-600">
-          These are hardcoded for balance: <strong>Monthly renewal = +50 pts</strong>, <strong>Yearly renewal = +500 pts</strong>.
-          Adjust the per-activity settings above to fine-tune engagement incentives.
-        </p>
-      </div>
 
       {/* Feedback */}
       {message && (

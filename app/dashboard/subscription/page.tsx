@@ -17,13 +17,16 @@ const ACTION_LABELS: Record<string, { label: string; icon: string; color: string
 export default async function SubscriptionPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (user.role === "admin") redirect("/dashboard/admin");
 
   const subData = await getSubscriptionData();
   if (!subData) redirect("/login");
 
-  const [rewardLogs, pointsPerTaka] = await Promise.all([
+  const [rewardLogs, pointsPerTaka, monthlyPrice, yearlyPrice] = await Promise.all([
     getRewardLogs(user.id),
     getRewardSettingValue("points_per_taka"),
+    getRewardSettingValue("premium_monthly_price"),
+    getRewardSettingValue("premium_yearly_price"),
   ]);
 
   const formattedExpiry = subData.premiumExpiresAt
@@ -54,6 +57,7 @@ export default async function SubscriptionPage() {
           </p>
         </div>
       </header>
+
 
       {/* Account Overview Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -125,6 +129,8 @@ export default async function SubscriptionPage() {
           expiresAt={subData.premiumExpiresAt?.toISOString()}
           rewardPoints={subData.rewardPoints}
           pointsPerTaka={pointsPerTaka}
+          monthlyPrice={monthlyPrice || 150}
+          yearlyPrice={yearlyPrice || 1500}
         />
       </section>
 
