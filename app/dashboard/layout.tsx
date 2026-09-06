@@ -3,13 +3,13 @@ import { getCurrentUser, dashboardFor } from "@/lib/session";
 import { Sidebar, type NavGroup } from "@/components/Sidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 
-function explore(includeAi = true): NavGroup {
+function explore(includeAi = true, includeSubscription = true): NavGroup {
   return {
     heading: "Explore & Learning",
     items: [
       { label: "Find a Tutor", href: "/dashboard/tutors", icon: "search" },
       ...(includeAi ? [{ label: "TutorBot AI", href: "/dashboard/tutorbot", icon: "robot" as const }] : []),
-      { label: "Subscription & Plans", href: "/dashboard/subscription", icon: "crown" },
+      ...(includeSubscription ? [{ label: "Subscription & Plans", href: "/dashboard/subscription", icon: "crown" as const }] : []),
       { label: "My Bookings", href: "/dashboard/bookings", icon: "calendar" },
       { label: "Chat Room", href: "/dashboard/chat", icon: "chat" },
     ],
@@ -48,7 +48,7 @@ function navFor(role: string, home: string): NavGroup[] {
           { label: "Student Profiles", href: `${home}#profiles`, icon: "users" },
         ],
       },
-      explore(false),
+      explore(false, false),
     ];
   }
 
